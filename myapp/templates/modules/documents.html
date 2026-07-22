@@ -1,0 +1,120 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Documents - Kudumbashree Digital Management System{% endblock %}
+
+{% block content %}
+<!-- Header Banner -->
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card-kudumbashree border-0 bg-white p-4">
+            <h4 class="mb-1 fw-bold text-primary-purple"><i class="fas fa-folder-open me-2"></i>Digital Documents Safe</h4>
+            <p class="text-muted mb-0 small">Secure vault to upload member identity cards, credit loan agreement forms, and written resolutions digests.</p>
+        </div>
+    </div>
+</div>
+
+<div class="row g-4">
+    <!-- Upload Document Form (Members Only) -->
+    <div class="col-lg-4 d-print-none">
+        {% if profile.role == 'member' %}
+            <div class="card-kudumbashree border-0 bg-white shadow-sm">
+                <div class="card-header-custom">
+                    <h5 class="mb-0 fw-bold"><i class="fas fa-cloud-upload-alt text-primary-purple me-2"></i>Upload File</h5>
+                </div>
+                <div class="p-4">
+                    <form method="POST" action="{% url 'document_upload' %}" enctype="multipart/form-data">
+                        {% csrf_token %}
+                        <div class="mb-3">
+                            <label class="form-label fw-semibold">File Title Name</label>
+                            <input type="text" name="title" class="form-control" placeholder="e.g. Identity Aadhaar Card" required>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label fw-semibold">Document Category</label>
+                            <select name="document_type" class="form-select">
+                                <option value="id_card">Member ID Card</option>
+                                <option value="loan_doc">Loan Agreement</option>
+                                <option value="certificate">Certificate</option>
+                                <option value="agreement">Written Agreement</option>
+                                <option value="other">Other Document</option>
+                            </select>
+                        </div>
+                        <div class="mb-4">
+                            <label class="form-label fw-semibold">Choose File (PDF/Image)</label>
+                            <input type="file" name="document_file" class="form-control" required>
+                        </div>
+                        <button type="submit" class="btn btn-kudumbashree-primary w-100 py-2.5 shadow-sm">
+                            <i class="fas fa-upload me-2"></i>Upload to Vault
+                        </button>
+                    </form>
+                </div>
+            </div>
+        {% else %}
+            <!-- Guideline box for Office Bearers/Admins -->
+            <div class="card-kudumbashree border-0 bg-white shadow-sm p-4 text-center h-100 d-flex flex-column justify-content-center">
+                <div class="stat-icon-wrapper stat-purple fs-2 mx-auto mb-3" style="width: 60px; height: 60px; border-radius: 50%;">
+                    <i class="fas fa-shield-alt"></i>
+                </div>
+                <h5 class="fw-bold text-dark mb-2">Vault Auditor</h5>
+                <p class="text-muted small">Members can securely upload documents. As an office bearer/admin, you can audit, verify, and view uploaded agreements logs.</p>
+            </div>
+        {% endif %}
+    </div>
+
+    <!-- Uploaded Documents Ledger list -->
+    <div class="col-lg-8">
+        <div class="card-kudumbashree border-0 bg-white shadow-sm">
+            <div class="card-header-custom d-flex justify-content-between align-items-center flex-wrap gap-2">
+                <h5 class="mb-0 fw-bold"><i class="fas fa-history text-primary-purple me-2"></i>Saved Vault Records</h5>
+                <!-- Filter Search -->
+                <div class="d-flex gap-2 align-items-center d-print-none">
+                    <input type="text" class="form-control form-control-sm table-search-input" data-target-table="docs-table" placeholder="Search files..." style="width: 150px;">
+                </div>
+            </div>
+            <div class="p-3">
+                <div class="table-responsive" style="max-height: 480px; overflow-y: auto;">
+                    <table class="table table-custom table-hover mb-0" id="docs-table">
+                        <thead>
+                            <tr>
+                                <th class="sortable-header">File Title</th>
+                                <th class="sortable-header">Category</th>
+                                <th class="sortable-header">Uploader</th>
+                                <th>Uploaded Date</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for doc in documents %}
+                                <tr>
+                                    <td>
+                                        <div class="d-flex align-items-center gap-2">
+                                            <i class="fas fa-file-pdf fs-4 text-danger"></i>
+                                            <strong>{{ doc.title }}</strong>
+                                        </div>
+                                    </td>
+                                    <td><span class="badge bg-light text-dark border">{{ doc.get_document_type_display }}</span></td>
+                                    <td>{{ doc.member.username }}</td>
+                                    <td>{{ doc.uploaded_at|date:"d M Y" }}</td>
+                                    <td>
+                                        <div class="d-flex gap-1">
+                                            {% if doc.file %}
+                                                <a href="{{ doc.file.url }}" download class="btn btn-sm btn-kudumbashree-outline-purple py-1 px-3" style="font-size: 0.7rem;"><i class="fas fa-download me-1"></i>Download</a>
+                                            {% else %}
+                                                <span class="text-muted small">No File</span>
+                                            {% endif %}
+                                        </div>
+                                    </td>
+                                </tr>
+                            {% empty %}
+                                <tr class="empty-row">
+                                    <td colspan="5" class="text-center py-4 text-muted">No documents saved in vault records.</td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

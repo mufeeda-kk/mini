@@ -1,0 +1,72 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}OTP Verification - Kudumbashree Digital Management System{% endblock %}
+
+{% block guest_content %}
+<div class="auth-bg">
+    <div class="auth-card">
+        
+        <!-- Header -->
+        <div class="auth-header" style="background: linear-gradient(135deg, var(--primary-green) 0%, #548E2E 100%);">
+            <div class="rounded-circle bg-white text-primary-green d-flex align-items-center justify-content-center mx-auto mb-3" 
+                 style="width: 50px; height: 50px; font-weight: 800; font-size: 1.5rem;">
+                <i class="fas fa-mobile-alt"></i>
+            </div>
+            <h4 class="mb-1 fw-bold">OTP Verification</h4>
+            <p class="mb-0 small text-white-50">One-time security code verification check</p>
+        </div>
+
+        <!-- Form Body -->
+        <div class="p-4 p-md-5">
+            <p class="text-center text-muted small mb-4">
+                We have dispatched a 6-digit verification code to your email. Please type it below to proceed with setting up a new password.
+            </p>
+
+            <form method="POST" action="{% url 'otp_verification' %}">
+                {% csrf_token %}
+                
+                <!-- OTP Digits Box Grid -->
+                <div class="d-flex justify-content-center gap-2 mb-4">
+                    <input type="text" name="otp_digit_1" class="form-control text-center fw-bold fs-4" style="width: 45px; height: 50px;" maxlength="1" required autofocus>
+                    <input type="text" name="otp_digit_2" class="form-control text-center fw-bold fs-4" style="width: 45px; height: 50px;" maxlength="1" required>
+                    <input type="text" name="otp_digit_3" class="form-control text-center fw-bold fs-4" style="width: 45px; height: 50px;" maxlength="1" required>
+                    <input type="text" name="otp_digit_4" class="form-control text-center fw-bold fs-4" style="width: 45px; height: 50px;" maxlength="1" required>
+                    <input type="text" name="otp_digit_5" class="form-control text-center fw-bold fs-4" style="width: 45px; height: 50px;" maxlength="1" required>
+                    <input type="text" name="otp_digit_6" class="form-control text-center fw-bold fs-4" style="width: 45px; height: 50px;" maxlength="1" required>
+                </div>
+
+                <!-- Submit Button -->
+                <button type="submit" class="btn btn-kudumbashree-secondary w-100 py-2.5 fs-6 shadow-sm mb-3">
+                    Verify & Continue
+                </button>
+
+                <!-- Navigation link back -->
+                <div class="text-center">
+                    <span class="text-muted small">Didn't receive the passcode?</span>
+                    <a href="#" class="text-primary-purple fw-bold text-decoration-none small ms-1">Resend Code</a>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+    // Easy auto-focus jump logic for OTP cells
+    document.addEventListener("DOMContentLoaded", function () {
+        const inputs = document.querySelectorAll(".auth-card input[type=text]");
+        inputs.forEach((input, index) => {
+            input.addEventListener("input", function () {
+                if (input.value.length === 1 && index < inputs.length - 1) {
+                    inputs[index + 1].focus();
+                }
+            });
+            input.addEventListener("keydown", function (e) {
+                if (e.key === "Backspace" && input.value.length === 0 && index > 0) {
+                    inputs[index - 1].focus();
+                }
+            });
+        });
+    });
+</script>
+{% endblock %}

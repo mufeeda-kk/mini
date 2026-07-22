@@ -1,0 +1,233 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Loans - Kudumbashree Digital Management System{% endblock %}
+
+{% block content %}
+<!-- Header Banner -->
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card-kudumbashree border-0 bg-white p-4">
+            <h4 class="mb-1 fw-bold text-primary-purple"><i class="fas fa-hand-holding-usd me-2"></i>Loans & Credit Manager</h4>
+            <p class="text-muted mb-0 small">Request micro-loans, check repayment status, and view historical loan statistics.</p>
+        </div>
+    </div>
+</div>
+
+<div class="row g-4 mb-4 d-print-none">
+    <!-- Loan Application Form (Members) OR Review List (President) -->
+    <div class="col-lg-6">
+        {% if profile.role == 'member' %}
+            <div class="card-kudumbashree border-0 h-100 bg-white shadow-sm">
+                <div class="card-header-custom">
+                    <h5 class="mb-0 fw-bold"><i class="fas fa-file-invoice text-primary-purple me-2"></i>Apply for Credit</h5>
+                </div>
+                <div class="p-4">
+                    <form method="POST" action="{% url 'loan_apply' %}">
+                        {% csrf_token %}
+                        <div class="mb-3">
+                            <label class="form-label fw-semibold">Requested Principal Amount (₹)</label>
+                            {{ form.amount }}
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label fw-semibold">Repayment Tenure (Months)</label>
+                            {{ form.duration_months }}
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label fw-semibold">Annual Interest Rate (%)</label>
+                            <input type="text" class="form-control bg-light" value="4.0%" readonly>
+                            <input type="hidden" name="interest_rate" value="4.00">
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label fw-semibold">Loan Purpose Description</label>
+                            {{ form.purpose }}
+                        </div>
+                        <button type="submit" class="btn btn-kudumbashree-primary w-100 py-2.5 shadow-sm">
+                            <i class="fas fa-paper-plane me-2"></i>Submit Application
+                        </button>
+                    </form>
+                </div>
+            </div>
+        {% else %}
+            <!-- President approvals queue -->
+            <div class="card-kudumbashree border-0 h-100 bg-white shadow-sm">
+                <div class="card-header-custom">
+                    <h5 class="mb-0 fw-bold"><i class="fas fa-check-double text-primary-green me-2"></i>Pending Credit Approvals</h5>
+                </div>
+                <div class="p-3">
+                    <div class="table-responsive" style="max-height: 380px;">
+                        <table class="table table-custom table-hover mb-0">
+                            <thead>
+                                <tr>
+                                    <th>Applicant</th>
+                                    <th>Amount</th>
+                                    <th>Duration</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for loan in loans %}
+                                    {% if loan.status == 'pending' %}
+                                        <tr>
+                                            <td><strong>{{ loan.member.username }}</strong></td>
+                                            <td>₹{{ loan.amount|floatformat:2 }}</td>
+                                            <td>{{ loan.duration_months }} Months</td>
+                                            <td>
+                                                <div class="d-flex gap-1">
+                                                    <a href="{% url 'loan_action' loan.id 'approve' %}" class="btn btn-sm btn-kudumbashree-secondary text-white py-1 px-2" style="font-size: 0.7rem;">Approve</a>
+                                                    <a href="{% url 'loan_action' loan.id 'reject' %}" class="btn btn-sm btn-outline-danger py-1 px-2" style="font-size: 0.7rem;">Reject</a>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    {% endif %}
+                                {% empty %}
+                                    <tr>
+                                        <td colspan="4" class="text-center py-4 text-muted">No pending credit approvals found.</td>
+                                    </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        {% endif %}
+    </div>
+
+    <!-- Loan EMI Repayment Calculator -->
+    <div class="col-lg-6">
+        <div class="card-kudumbashree border-0 h-100 bg-white shadow-sm">
+            <div class="card-header-custom">
+                <h5 class="mb-0 fw-bold"><i class="fas fa-calculator text-primary-green me-2"></i>Repayment Calculator</h5>
+            </div>
+            <div class="p-4">
+                <div class="mb-3">
+                    <label for="calc-amount" class="form-label fw-semibold">Principal Amount (₹)</label>
+                    <input type="number" id="calc-amount" class="form-control" value="10000" placeholder="e.g. 15000">
+                </div>
+                <div class="mb-3">
+                    <label for="calc-tenure" class="form-label fw-semibold">Tenure (Months)</label>
+                    <input type="number" id="calc-tenure" class="form-control" value="12" placeholder="e.g. 12">
+                </div>
+                <div class="mb-4">
+                    <label for="calc-rate" class="form-label fw-semibold">Interest Rate (% p.a.)</label>
+                    <input type="number" id="calc-rate" class="form-control bg-light" value="4" readonly>
+                </div>
+
+                <div class="p-3 bg-light rounded-3 mb-0">
+                    <div class="d-flex justify-content-between mb-2">
+                        <span class="text-muted small">Estimated Monthly Installment:</span>
+                        <span class="fw-bold text-primary-purple" id="calc-emi">₹0.00</span>
+                    </div>
+                    <div class="d-flex justify-content-between">
+                        <span class="text-muted small">Total Interest Payable:</span>
+                        <span class="fw-bold text-dark" id="calc-total-interest">₹0.00</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Active and Historical Credit Ledger -->
+<div class="row">
+    <div class="col-12">
+        <div class="card-kudumbashree border-0 bg-white shadow-sm">
+            <div class="card-header-custom d-flex justify-content-between align-items-center flex-wrap gap-2">
+                <h5 class="mb-0 fw-bold"><i class="fas fa-history text-primary-purple me-2"></i>Loans Ledger Record</h5>
+                <!-- Filter Search -->
+                <div class="d-flex gap-2 align-items-center d-print-none">
+                    <input type="text" class="form-control form-control-sm table-search-input" data-target-table="loans-table" placeholder="Search loans..." style="width: 150px;">
+                    <button onclick="window.print()" class="btn btn-sm btn-kudumbashree-outline-purple"><i class="fas fa-print"></i></button>
+                </div>
+            </div>
+            <div class="p-3">
+                <div class="table-responsive">
+                    <table class="table table-custom table-hover mb-0" id="loans-table">
+                        <thead>
+                            <tr>
+                                <th class="sortable-header">Applicant Member</th>
+                                <th class="sortable-header">Loan Amount</th>
+                                <th>Rate</th>
+                                <th>Duration</th>
+                                <th class="sortable-header">Repaid Amount</th>
+                                <th>Submit Date</th>
+                                <th>Sanction Status</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for loan in loans %}
+                                <tr>
+                                    <td><strong>{{ loan.member.username }}</strong></td>
+                                    <td>₹{{ loan.amount|floatformat:2 }}</td>
+                                    <td>{{ loan.interest_rate }}%</td>
+                                    <td>{{ loan.duration_months }} Months</td>
+                                    <td>₹{{ loan.repaid_amount|floatformat:2 }}</td>
+                                    <td>{{ loan.request_date|date:"d M Y" }}</td>
+                                    <td>
+                                        {% if loan.status == 'approved' %}
+                                            <span class="badge-kudumbashree badge-success">Approved</span>
+                                        {% elif loan.status == 'pending' %}
+                                            <span class="badge-kudumbashree badge-pending">Pending</span>
+                                        {% elif loan.status == 'repaid' %}
+                                            <span class="badge-kudumbashree badge-success">Fully Repaid</span>
+                                        {% else %}
+                                            <span class="badge-kudumbashree badge-danger">Rejected</span>
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                            {% empty %}
+                                <tr class="empty-row">
+                                    <td colspan="7" class="text-center py-4 text-muted">No loans registered in database ledger.</td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.addEventListener("DOMContentLoaded", function () {
+        const amtInput = document.getElementById("calc-amount");
+        const tenureInput = document.getElementById("calc-tenure");
+        const rateInput = document.getElementById("calc-rate");
+        const emiText = document.getElementById("calc-emi");
+        const interestText = document.getElementById("calc-total-interest");
+
+        function calculateEMI() {
+            const P = parseFloat(amtInput.value) || 0;
+            const N = parseInt(tenureInput.value) || 0;
+            const R = (parseFloat(rateInput.value) || 4) / 12 / 100;
+
+            if (P <= 0 || N <= 0) {
+                emiText.innerText = "₹0.00";
+                interestText.innerText = "₹0.00";
+                return;
+            }
+
+            let emi = 0;
+            if (R === 0) {
+                emi = P / N;
+            } else {
+                emi = (P * R * Math.pow(1 + R, N)) / (Math.pow(1 + R, N) - 1);
+            }
+
+            const totalRepayment = emi * N;
+            const totalInterest = totalRepayment - P;
+
+            emiText.innerText = "₹" + emi.toFixed(2);
+            interestText.innerText = "₹" + totalInterest.toFixed(2);
+        }
+
+        if (amtInput && tenureInput) {
+            amtInput.addEventListener("input", calculateEMI);
+            tenureInput.addEventListener("input", calculateEMI);
+            calculateEMI();
+        }
+    });
+</script>
+{% endblock %}

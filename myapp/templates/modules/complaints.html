@@ -1,0 +1,163 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Complaints - Kudumbashree Digital Management System{% endblock %}
+
+{% block content %}
+<!-- Header Banner -->
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card-kudumbashree border-0 bg-white p-4">
+            <h4 class="mb-1 fw-bold text-primary-purple"><i class="fas fa-clipboard-list me-2"></i>Grievance Redressal Portal</h4>
+            <p class="text-muted mb-0 small">Submit group feedback, audit resolutions progress, and view administrative replies.</p>
+        </div>
+    </div>
+</div>
+
+<div class="row g-4">
+    <!-- Submit complaint (Members Only) -->
+    <div class="col-lg-4 d-print-none">
+        {% if profile.role == 'member' %}
+            <div class="card-kudumbashree border-0 bg-white shadow-sm">
+                <div class="card-header-custom">
+                    <h5 class="mb-0 fw-bold"><i class="fas fa-edit text-primary-purple me-2"></i>File Grievance</h5>
+                </div>
+                <div class="p-4">
+                    <form method="POST" action="{% url 'complaint_submit' %}">
+                        {% csrf_token %}
+                        <div class="mb-3">
+                            <label class="form-label fw-semibold">Subject Title</label>
+                            {{ form.title }}
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label fw-semibold">Priority Level</label>
+                            {{ form.priority }}
+                        </div>
+                        <div class="mb-4">
+                            <label class="form-label fw-semibold">Grievance Description</label>
+                            {{ form.description }}
+                        </div>
+                        <button type="submit" class="btn btn-kudumbashree-primary w-100 py-2.5 shadow-sm">
+                            <i class="fas fa-paper-plane me-2"></i>Submit Grievance
+                        </button>
+                    </form>
+                </div>
+            </div>
+        {% else %}
+            <!-- Information guidelines card for Office Bearers/Admins -->
+            <div class="card-kudumbashree border-0 bg-white shadow-sm p-4 text-center h-100 d-flex flex-column justify-content-center">
+                <div class="stat-icon-wrapper stat-purple fs-2 mx-auto mb-3" style="width: 60px; height: 60px; border-radius: 50%;">
+                    <i class="fas fa-gavel"></i>
+                </div>
+                <h5 class="fw-bold text-dark mb-2">Audit Rulings Panel</h5>
+                <p class="text-muted small">Select any pending grievance from the right-side list and write resolution responses to verify resolution claims.</p>
+            </div>
+        {% endif %}
+    </div>
+
+    <!-- Grievances list -->
+    <div class="col-lg-8">
+        <div class="card-kudumbashree border-0 bg-white shadow-sm">
+            <div class="card-header-custom d-flex justify-content-between align-items-center flex-wrap gap-2">
+                <h5 class="mb-0 fw-bold"><i class="fas fa-history text-primary-purple me-2"></i>Registered Grievances</h5>
+                <!-- Filter Search -->
+                <div class="d-flex gap-2 align-items-center d-print-none">
+                    <input type="text" class="form-control form-control-sm table-search-input" data-target-table="complaints-table" placeholder="Search grievance..." style="width: 150px;">
+                </div>
+            </div>
+            <div class="p-3">
+                <div class="table-responsive" style="max-height: 480px; overflow-y: auto;">
+                    <table class="table table-custom table-hover mb-0" id="complaints-table">
+                        <thead>
+                            <tr>
+                                <th class="sortable-header">Subject</th>
+                                <th class="sortable-header">Member</th>
+                                <th>Priority</th>
+                                <th>Date</th>
+                                <th class="sortable-header">Status</th>
+                                <th class="d-print-none">Resolutions Response</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for comp in complaints %}
+                                <tr>
+                                    <td>
+                                        <h6 class="mb-0 fw-bold text-dark">{{ comp.title }}</h6>
+                                        <small class="text-muted">{{ comp.description|truncatechars:80 }}</small>
+                                    </td>
+                                    <td>{{ comp.member.username }}</td>
+                                    <td>
+                                        {% if comp.priority == 'high' %}
+                                            <span class="badge bg-danger-subtle text-danger">High</span>
+                                        {% elif comp.priority == 'medium' %}
+                                            <span class="badge bg-warning-subtle text-warning">Medium</span>
+                                        {% else %}
+                                            <span class="badge bg-light text-muted border">Low</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>{{ comp.created_at|date:"d M Y" }}</td>
+                                    <td>
+                                        {% if comp.status == 'resolved' %}
+                                            <span class="badge-kudumbashree badge-success">Resolved</span>
+                                        {% elif comp.status == 'in_progress' %}
+                                            <span class="badge-kudumbashree badge-pending">In Progress</span>
+                                        {% else %}
+                                            <span class="badge bg-info text-white">Submitted</span>
+                                        {% endif %}
+                                    </td>
+                                    <td class="d-print-none">
+                                        <!-- Actions -->
+                                        {% if profile.role == 'secretary' or profile.role == 'president' or profile.role == 'admin' %}
+                                            {% if comp.status != 'resolved' %}
+                                                <button class="btn btn-sm btn-kudumbashree-outline-purple py-1 px-2" style="font-size: 0.7rem;" data-bs-toggle="modal" data-bs-target="#resolveModal-{{ comp.id }}">Resolve</button>
+                                            {% else %}
+                                                <span class="text-muted small">Replied: <code>{{ comp.secretary_response|default:comp.admin_response|truncatechars:20 }}</code></span>
+                                            {% endif %}
+                                        {% else %}
+                                            <span class="text-muted small">{{ comp.secretary_response|default:"Awaiting review response" }}</span>
+                                        {% endif %}
+                                    </td>
+                                </tr>
+
+                                <!-- Resolution Modal (for auditors) -->
+                                <div class="modal fade" id="resolveModal-{{ comp.id }}" tabindex="-1" aria-labelledby="resolveModalLabel-{{ comp.id }}" aria-hidden="true">
+                                    <div class="modal-dialog">
+                                        <div class="modal-content card-kudumbashree border-0 bg-white">
+                                            <div class="modal-header border-bottom">
+                                                <h5 class="modal-title fw-bold" id="resolveModalLabel-{{ comp.id }}"><i class="fas fa-gavel text-primary-purple me-2"></i>Resolve Grievance</h5>
+                                                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                                            </div>
+                                            <form method="POST" action="{% url 'complaint_reply' comp.id %}">
+                                                {% csrf_token %}
+                                                <div class="modal-body p-4">
+                                                    <p class="small text-muted mb-3">Grievance submitted by <strong>{{ comp.member.username }}</strong> on {{ comp.created_at|date:"d M Y" }}:<br><em class="text-dark">"{{ comp.description }}"</em></p>
+                                                    <div class="mb-3">
+                                                        <label class="form-label">Audit Response / Explanation</label>
+                                                        <textarea name="reply_text" class="form-control rounded-3" rows="4" placeholder="Enter resolution action response..." required></textarea>
+                                                    </div>
+                                                    <div class="form-check">
+                                                        <input type="checkbox" name="resolve" value="true" class="form-check-input" id="resolve-check-{{ comp.id }}" checked>
+                                                        <label class="form-check-label text-muted small" for="resolve-check-{{ comp.id }}">Mark this grievance as RESOLVED and close thread.</label>
+                                                    </div>
+                                                </div>
+                                                <div class="modal-footer border-top p-3">
+                                                    <button type="button" class="btn btn-light border rounded-pill" data-bs-dismiss="modal">Cancel</button>
+                                                    <button type="submit" class="btn btn-kudumbashree-primary">Post Reply</button>
+                                                </div>
+                                            </form>
+                                        </div>
+                                    </div>
+                                </div>
+                            {% empty %}
+                                <tr class="empty-row">
+                                    <td colspan="6" class="text-center py-4 text-muted">No grievances logged in database registers.</td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

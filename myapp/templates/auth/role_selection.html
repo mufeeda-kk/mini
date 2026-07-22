@@ -1,0 +1,75 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Select Portal - Kudumbashree Digital Management System{% endblock %}
+
+{% block guest_content %}
+<div class="auth-bg">
+    <div class="container" style="max-width: 900px;">
+        <div class="text-center mb-5">
+            <!-- Colored Circle Logo -->
+            <div class="rounded-circle d-flex align-items-center justify-content-center mx-auto mb-3 text-white" 
+                 style="background: linear-gradient(135deg, var(--primary-purple) 0%, var(--primary-green) 100%); width: 64px; height: 64px; font-weight: 800; font-size: 1.8rem;">
+                K
+            </div>
+            <h2 class="fw-bold mb-1">Welcome, {{ request.user.username|capfirst }}</h2>
+            <p class="text-muted">Select an authorized portal entry matching your profile permissions.</p>
+        </div>
+
+        <div class="row g-4 justify-content-center">
+            
+            {% if profile.role == 'admin' %}
+                <!-- Admin gateway card -->
+                <div class="col-md-5">
+                    <a href="{% url 'admin_dashboard' %}" class="text-decoration-none">
+                        <div class="card-kudumbashree p-4 border-0 h-100 text-center bg-white shadow-sm">
+                            <div class="stat-icon-wrapper stat-purple mx-auto mb-3 fs-3" style="width: 60px; height: 60px;">
+                                <i class="fas fa-user-shield"></i>
+                            </div>
+                            <h4 class="fw-bold text-dark">System Administration</h4>
+                            <p class="text-muted small mb-0">Monitor national reports, manage registration approvals, and audit local group parameters.</p>
+                        </div>
+                    </a>
+                </div>
+            {% endif %}
+
+            {% if profile.role == 'president' or profile.role == 'secretary' or profile.role == 'admin' %}
+                <!-- President/Secretary gateway card -->
+                <div class="col-md-5">
+                    <a href="{% url 'president_dashboard' %}" class="text-decoration-none">
+                        <div class="card-kudumbashree p-4 border-0 h-100 text-center bg-white shadow-sm">
+                            <div class="stat-icon-wrapper stat-green mx-auto mb-3 fs-3" style="width: 60px; height: 60px;">
+                                <i class="fas fa-users-cog"></i>
+                            </div>
+                            <h4 class="fw-bold text-dark">Unit Office Bearer</h4>
+                            <p class="text-muted small mb-0">Record manual attendance sheets, track loan applications, manage chitty deposits, and schedule assemblies.</p>
+                        </div>
+                    </a>
+                </div>
+            {% endif %}
+
+            {% if profile.role == 'member' or profile.role == 'admin' %}
+                <!-- Member gateway card -->
+                <div class="col-md-5">
+                    <a href="{% url 'member_dashboard' %}" class="text-decoration-none">
+                        <div class="card-kudumbashree p-4 border-0 h-100 text-center bg-white shadow-sm">
+                            <div class="stat-icon-wrapper stat-purple mx-auto mb-3 fs-3" style="width: 60px; height: 60px; color: var(--primary-purple); background: var(--light-purple);">
+                                <i class="fas fa-user-circle"></i>
+                            </div>
+                            <h4 class="fw-bold text-dark">Member Portal</h4>
+                            <p class="text-muted small mb-0">Inspect personal attendance calendars, verify active loan statuses, request welfare benefits, and chat with local unit.</p>
+                        </div>
+                    </a>
+                </div>
+            {% endif %}
+
+        </div>
+
+        <div class="text-center mt-5">
+            <a href="/logout/" class="btn btn-outline-danger btn-sm px-4 rounded-pill">
+                <i class="fas fa-sign-out-alt me-1"></i>Sign Out of Session
+            </a>
+        </div>
+    </div>
+</div>
+{% endblock %}

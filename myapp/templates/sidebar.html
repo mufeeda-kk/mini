@@ -1,0 +1,126 @@
+{% load static %}
+<div class="sidebar-wrapper">
+    <!-- Brand Header -->
+    <div class="sidebar-brand">
+        <div class="rounded-circle d-flex align-items-center justify-content-center me-2 text-white" 
+             style="background: linear-gradient(135deg, var(--primary-purple) 0%, var(--primary-green) 100%); width: 38px; height: 38px; font-weight: 800; font-size: 1.1rem; flex-shrink: 0;">
+            K
+        </div>
+        <div class="sidebar-brand-text d-flex flex-column">
+            <span class="fw-bold text-dark lh-sm" style="font-size: 0.95rem;">Kudumbashree</span>
+            <small class="text-primary-green fw-semibold" style="font-size: 0.7rem; letter-spacing: 0.5px;">DIGITAL PORTAL</small>
+        </div>
+    </div>
+
+    <!-- Navigation Menu Items -->
+    <div class="sidebar-menu">
+        
+        <div class="px-3 mb-2 text-muted uppercase fw-bold sidebar-brand-text" style="font-size: 0.7rem; letter-spacing: 1px;">
+            PORTAL NAVIGATOR
+        </div>
+
+        {% if profile.role == 'admin' %}
+            <!-- Admin Navigation -->
+            <a href="{% url 'admin_dashboard' %}" class="sidebar-item {% if request.path == '/dashboard/admin/' %}active{% endif %}">
+                <i class="fas fa-th-large"></i>
+                <span>Admin Dashboard</span>
+            </a>
+            <!-- Dedicated approval path for Admin -->
+            <a href="{% url 'approval_dashboard' %}" class="sidebar-item {% if '/dashboard/approvals/' in request.path %}active{% endif %}">
+                <i class="fas fa-user-check"></i>
+                <span>Roster Approvals</span>
+            </a>
+        {% elif profile.role == 'president' or profile.role == 'secretary' %}
+            <!-- President & Secretary Navigation -->
+            <a href="{% url 'president_dashboard' %}" class="sidebar-item {% if request.path == '/dashboard/president/' %}active{% endif %}">
+                <i class="fas fa-th-large"></i>
+                <span>Unit Dashboard</span>
+            </a>
+            <!-- Shared approvals list -->
+            <a href="{% url 'approval_dashboard' %}" class="sidebar-item {% if '/dashboard/approvals/' in request.path %}active{% endif %}">
+                <i class="fas fa-user-check"></i>
+                <span>Member Approvals</span>
+            </a>
+        {% else %}
+            <!-- Member Navigation -->
+            <a href="{% url 'member_dashboard' %}" class="sidebar-item {% if request.path == '/dashboard/member/' %}active{% endif %}">
+                <i class="fas fa-user-circle"></i>
+                <span>My Dashboard</span>
+            </a>
+        {% endif %}
+
+        <a href="{% url 'attendance' %}" class="sidebar-item {% if '/attendance/' in request.path %}active{% endif %}">
+            <i class="fas fa-calendar-check"></i>
+            <span>Attendance Log</span>
+        </a>
+
+        <a href="{% url 'loans' %}" class="sidebar-item {% if '/loans/' in request.path %}active{% endif %}">
+            <i class="fas fa-hand-holding-usd"></i>
+            <span>Loans & Credit</span>
+        </a>
+
+        <a href="{% url 'chitty' %}" class="sidebar-item {% if '/chitty/' in request.path %}active{% endif %}">
+            <i class="fas fa-coins"></i>
+            <span>Chitty Savings</span>
+        </a>
+
+        <a href="{% url 'meetings_events' %}" class="sidebar-item {% if '/meetings-events/' in request.path %}active{% endif %}">
+            <i class="fas fa-users"></i>
+            <span>Meetings & Events</span>
+        </a>
+
+        {% if profile.role != 'admin' %}
+            <a href="{% url 'micro_enterprise' %}" class="sidebar-item {% if '/micro-enterprise/' in request.path %}active{% endif %}">
+                <i class="fas fa-store"></i>
+                <span>Enterprises</span>
+            </a>
+        {% endif %}
+
+        <a href="{% url 'finance' %}" class="sidebar-item {% if '/finance/' in request.path %}active{% endif %}">
+            <i class="fas fa-file-invoice-dollar"></i>
+            <span>Income & Expense</span>
+        </a>
+
+        <a href="{% url 'complaints' %}" class="sidebar-item {% if '/complaints/' in request.path %}active{% endif %}">
+            <i class="fas fa-clipboard-list"></i>
+            <span>Complaints</span>
+        </a>
+
+        <a href="{% url 'schemes' %}" class="sidebar-item {% if '/schemes/' in request.path %}active{% endif %}">
+            <i class="fas fa-heart"></i>
+            <span>Welfare Schemes</span>
+        </a>
+
+        <a href="{% url 'documents' %}" class="sidebar-item {% if '/documents/' in request.path %}active{% endif %}">
+            <i class="fas fa-folder-open"></i>
+            <span>Document Safe</span>
+        </a>
+
+        {% if profile.role != 'admin' %}
+            <a href="{% url 'group_chat' %}" class="sidebar-item {% if '/chat/' in request.path %}active{% endif %}">
+                <i class="fas fa-comments"></i>
+                <span>Group Chat</span>
+            </a>
+        {% endif %}
+
+        <a href="{% url 'analytics' %}" class="sidebar-item {% if '/analytics/' in request.path %}active{% endif %}">
+            <i class="fas fa-chart-line"></i>
+            <span>Reports Center</span>
+        </a>
+
+        <hr class="my-3 border-light-subtle">
+        
+        <a href="/logout/" class="sidebar-item text-danger">
+            <i class="fas fa-sign-out-alt"></i>
+            <span>Sign Out</span>
+        </a>
+    </div>
+
+    <!-- Theme Switch Toggle Switch at Bottom -->
+    <div class="theme-switch-wrapper">
+        <span class="theme-toggle-label small text-muted-50 fw-semibold" style="font-size: 0.75rem;"><i class="fas fa-moon me-1"></i>Dark Theme</span>
+        <div class="form-check form-switch mb-0">
+            <input class="form-check-input" type="checkbox" id="dark-mode-toggle" style="cursor: pointer;">
+        </div>
+    </div>
+</div>

@@ -1,0 +1,299 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Approvals Management - Kudumbashree Digital Management System{% endblock %}
+
+{% block content %}
+<!-- Breadcrumb Header -->
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card-kudumbashree border-0 bg-white p-4">
+            <h4 class="mb-1 fw-bold text-primary-purple"><i class="fas fa-user-check me-2"></i>Registration Approvals Registry</h4>
+            <p class="text-muted mb-0 small">Audit neighborhood registration signups, manage suspended users, and activate digital credentials.</p>
+        </div>
+    </div>
+</div>
+
+<!-- Category KPI Cards -->
+<div class="row g-4 mb-4">
+    <div class="col-md-3 col-sm-6">
+        <div class="stat-card shadow-sm">
+            <div class="d-flex align-items-center justify-content-between mb-2">
+                <span class="text-muted small fw-semibold text-uppercase">Pending Approvals</span>
+                <div class="stat-icon-wrapper stat-warning"><i class="fas fa-user-clock"></i></div>
+            </div>
+            <h3 class="fw-bold mb-0 text-warning">{{ pending|length }}</h3>
+            <small class="text-muted">Awaiting credentials review</small>
+        </div>
+    </div>
+    <div class="col-md-3 col-sm-6">
+        <div class="stat-card shadow-sm">
+            <div class="d-flex align-items-center justify-content-between mb-2">
+                <span class="text-muted small fw-semibold text-uppercase">Recently Approved</span>
+                <div class="stat-icon-wrapper stat-green"><i class="fas fa-user-check"></i></div>
+            </div>
+            <h3 class="fw-bold mb-0 text-success">{{ approved|length }}</h3>
+            <small class="text-success fw-semibold">Active digital accounts</small>
+        </div>
+    </div>
+    <div class="col-md-3 col-sm-6">
+        <div class="stat-card shadow-sm">
+            <div class="d-flex align-items-center justify-content-between mb-2">
+                <span class="text-muted small fw-semibold text-uppercase">Rejected Signups</span>
+                <div class="stat-icon-wrapper stat-danger"><i class="fas fa-user-times"></i></div>
+            </div>
+            <h3 class="fw-bold mb-0 text-danger">{{ rejected|length }}</h3>
+            <small class="text-muted">Declined applications</small>
+        </div>
+    </div>
+    <div class="col-md-3 col-sm-6">
+        <div class="stat-card shadow-sm">
+            <div class="d-flex align-items-center justify-content-between mb-2">
+                <span class="text-muted small fw-semibold text-uppercase">Suspended Accounts</span>
+                <div class="stat-icon-wrapper stat-purple"><i class="fas fa-user-slash"></i></div>
+            </div>
+            <h3 class="fw-bold mb-0 text-primary-purple">{{ suspended|length }}</h3>
+            <small class="text-muted">Blocked credentials</small>
+        </div>
+    </div>
+</div>
+
+<!-- Filters Panel -->
+<div class="card-kudumbashree border-0 bg-white shadow-sm p-4 mb-4 d-print-none">
+    <form method="GET" action="{% url 'approval_dashboard' %}" class="row g-3 align-items-end">
+        <div class="col-md-5">
+            <label class="form-label">Search Username / Name</label>
+            <div class="input-group">
+                <span class="input-group-text bg-light border-end-0 text-muted"><i class="fas fa-search"></i></span>
+                <input type="text" name="search" class="form-control border-start-0" placeholder="Type username..." value="{{ search_query }}">
+            </div>
+        </div>
+        <div class="col-md-4">
+            <label class="form-label">Filter by System Role</label>
+            <select name="role" class="form-select">
+                <option value="">All Roles</option>
+                <option value="president" {% if role_filter == 'president' %}selected{% endif %}>President</option>
+                <option value="secretary" {% if role_filter == 'secretary' %}selected{% endif %}>Secretary</option>
+                <option value="member" {% if role_filter == 'member' %}selected{% endif %}>Member</option>
+            </select>
+        </div>
+        <div class="col-md-3 d-flex gap-2">
+            <button type="submit" class="btn btn-kudumbashree-primary w-100"><i class="fas fa-filter me-2"></i>Filter</button>
+            <a href="{% url 'approval_dashboard' %}" class="btn btn-light border w-100">Clear</a>
+        </div>
+    </form>
+</div>
+
+<!-- Main Approvals Tabs -->
+<div class="card-kudumbashree border-0 bg-white shadow-sm mb-4">
+    <div class="card-header-custom p-0 border-bottom">
+        <ul class="nav nav-tabs border-0 px-3 pt-2" id="approvalTabs" role="tablist">
+            <li class="nav-item" role="presentation">
+                <button class="nav-link active border-0 text-dark fw-bold position-relative pb-3" id="pending-tab" data-bs-toggle="tab" data-bs-target="#pending-panel" type="button" role="tab" aria-controls="pending-panel" aria-selected="true">
+                    Pending Verification <span class="badge bg-warning text-white ms-1">{{ pending|length }}</span>
+                </button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link border-0 text-dark fw-bold position-relative pb-3" id="approved-tab" data-bs-toggle="tab" data-bs-target="#approved-panel" type="button" role="tab" aria-controls="approved-panel" aria-selected="false">
+                    Approved & Active <span class="badge bg-success text-white ms-1">{{ approved|length }}</span>
+                </button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link border-0 text-dark fw-bold position-relative pb-3" id="rejected-tab" data-bs-toggle="tab" data-bs-target="#rejected-panel" type="button" role="tab" aria-controls="rejected-panel" aria-selected="false">
+                    Rejected Applications <span class="badge bg-danger text-white ms-1">{{ rejected|length }}</span>
+                </button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link border-0 text-dark fw-bold position-relative pb-3" id="suspended-tab" data-bs-toggle="tab" data-bs-target="#suspended-panel" type="button" role="tab" aria-controls="suspended-panel" aria-selected="false">
+                    Suspended Accounts <span class="badge bg-secondary text-white ms-1">{{ suspended|length }}</span>
+                </button>
+            </li>
+        </ul>
+    </div>
+    
+    <div class="tab-content p-3" id="approvalTabsContent">
+        <!-- 1. PENDING TAB -->
+        <div class="tab-pane fade show active" id="pending-panel" role="tabpanel" aria-labelledby="pending-tab">
+            <div class="table-responsive">
+                <table class="table table-custom table-hover mb-0">
+                    <thead>
+                        <tr>
+                            <th>User Details</th>
+                            <th>Role Requested</th>
+                            <th>Contact Phone</th>
+                            <th>Registration Date</th>
+                            <th>Verification Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for prof in pending %}
+                            <tr>
+                                <td>
+                                    <div class="d-flex align-items-center gap-2">
+                                        <div class="rounded-circle bg-light text-primary d-flex align-items-center justify-content-center fw-bold" style="width: 32px; height: 32px;">
+                                            {{ prof.user.username|slice:":1"|upper }}
+                                        </div>
+                                        <div>
+                                            <h6 class="mb-0 fw-bold text-dark">{{ prof.user.get_full_name|default:prof.user.username }}</h6>
+                                            <small class="text-muted">{{ prof.user.email }}</small>
+                                        </div>
+                                    </div>
+                                </td>
+                                <td><span class="badge bg-light text-dark border">{{ prof.get_role_display }}</span></td>
+                                <td>{{ prof.phone|default:"-" }}</td>
+                                <td>{{ prof.created_at|date:"d M Y" }}</td>
+                                <td>
+                                    <div class="d-flex gap-2">
+                                        <a href="{% url 'verify_member_action' prof.id 'approve' %}" class="btn btn-sm btn-kudumbashree-secondary text-white py-1 px-3" style="font-size: 0.75rem;">Approve</a>
+                                        <a href="{% url 'verify_member_action' prof.id 'reject' %}" class="btn btn-sm btn-outline-danger py-1 px-3" style="font-size: 0.75rem;">Reject</a>
+                                    </div>
+                                </td>
+                            </tr>
+                        {% empty %}
+                            <tr>
+                                <td colspan="5" class="text-center py-5 text-muted">No pending signups found.</td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- 2. APPROVED TAB -->
+        <div class="tab-pane fade" id="approved-panel" role="tabpanel" aria-labelledby="approved-tab">
+            <div class="table-responsive">
+                <table class="table table-custom table-hover mb-0">
+                    <thead>
+                        <tr>
+                            <th>User Details</th>
+                            <th>Role</th>
+                            <th>Phone</th>
+                            <th>Created Date</th>
+                            <th>Status Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for prof in approved %}
+                            <tr>
+                                <td>
+                                    <div class="d-flex align-items-center gap-2">
+                                        <div class="rounded-circle bg-light text-primary d-flex align-items-center justify-content-center fw-bold" style="width: 32px; height: 32px;">
+                                            {{ prof.user.username|slice:":1"|upper }}
+                                        </div>
+                                        <div>
+                                            <h6 class="mb-0 fw-bold text-dark">{{ prof.user.get_full_name|default:prof.user.username }}</h6>
+                                            <small class="text-muted">{{ prof.user.email }}</small>
+                                        </div>
+                                    </div>
+                                </td>
+                                <td><span class="badge bg-light text-dark border">{{ prof.get_role_display }}</span></td>
+                                <td>{{ prof.phone|default:"-" }}</td>
+                                <td>{{ prof.created_at|date:"d M Y" }}</td>
+                                <td>
+                                    {% if prof.user != request.user %}
+                                        <a href="{% url 'verify_member_action' prof.id 'suspend' %}" class="btn btn-sm btn-outline-warning py-1 px-3" style="font-size: 0.75rem;">Suspend Account</a>
+                                    {% else %}
+                                        <span class="text-muted small">Current Session</span>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                        {% empty %}
+                            <tr>
+                                <td colspan="5" class="text-center py-5 text-muted">No active approved users list.</td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- 3. REJECTED TAB -->
+        <div class="tab-pane fade" id="rejected-panel" role="tabpanel" aria-labelledby="rejected-tab">
+            <div class="table-responsive">
+                <table class="table table-custom table-hover mb-0">
+                    <thead>
+                        <tr>
+                            <th>User Details</th>
+                            <th>Role</th>
+                            <th>Phone</th>
+                            <th>Registration Date</th>
+                            <th>Restoration Action</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for prof in rejected %}
+                            <tr>
+                                <td>
+                                    <div class="d-flex align-items-center gap-2">
+                                        <div class="rounded-circle bg-light text-primary d-flex align-items-center justify-content-center fw-bold" style="width: 32px; height: 32px;">
+                                            {{ prof.user.username|slice:":1"|upper }}
+                                        </div>
+                                        <div>
+                                            <h6 class="mb-0 fw-bold text-dark">{{ prof.user.get_full_name|default:prof.user.username }}</h6>
+                                            <small class="text-muted">{{ prof.user.email }}</small>
+                                        </div>
+                                    </div>
+                                </td>
+                                <td><span class="badge bg-light text-dark border">{{ prof.get_role_display }}</span></td>
+                                <td>{{ prof.phone|default:"-" }}</td>
+                                <td>{{ prof.created_at|date:"d M Y" }}</td>
+                                <td>
+                                    <a href="{% url 'verify_member_action' prof.id 'approve' %}" class="btn btn-sm btn-kudumbashree-secondary text-white py-1 px-3" style="font-size: 0.75rem;">Approve & Activate</a>
+                                </td>
+                            </tr>
+                        {% empty %}
+                            <tr>
+                                <td colspan="5" class="text-center py-5 text-muted">No rejected user applications list.</td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- 4. SUSPENDED TAB -->
+        <div class="tab-pane fade" id="suspended-panel" role="tabpanel" aria-labelledby="suspended-tab">
+            <div class="table-responsive">
+                <table class="table table-custom table-hover mb-0">
+                    <thead>
+                        <tr>
+                            <th>User Details</th>
+                            <th>Role</th>
+                            <th>Phone</th>
+                            <th>Suspension Date</th>
+                            <th>Restoration Action</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for prof in suspended %}
+                            <tr>
+                                <td>
+                                    <div class="d-flex align-items-center gap-2">
+                                        <div class="rounded-circle bg-light text-primary d-flex align-items-center justify-content-center fw-bold" style="width: 32px; height: 32px;">
+                                            {{ prof.user.username|slice:":1"|upper }}
+                                        </div>
+                                        <div>
+                                            <h6 class="mb-0 fw-bold text-dark">{{ prof.user.get_full_name|default:prof.user.username }}</h6>
+                                            <small class="text-muted">{{ prof.user.email }}</small>
+                                        </div>
+                                    </div>
+                                </td>
+                                <td><span class="badge bg-light text-dark border">{{ prof.get_role_display }}</span></td>
+                                <td>{{ prof.phone|default:"-" }}</td>
+                                <td>{{ prof.created_at|date:"d M Y" }}</td>
+                                <td>
+                                    <a href="{% url 'verify_member_action' prof.id 'approve' %}" class="btn btn-sm btn-kudumbashree-secondary text-white py-1 px-3" style="font-size: 0.75rem;">Re-Activate Account</a>
+                                </td>
+                            </tr>
+                        {% empty %}
+                            <tr>
+                                <td colspan="5" class="text-center py-5 text-muted">No suspended accounts found.</td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

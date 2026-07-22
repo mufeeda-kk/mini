@@ -1,0 +1,41 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Verify Email - Kudumbashree Digital Management System{% block endblock %}
+
+{% block guest_content %}
+<div class="auth-bg">
+    <div class="auth-card">
+        
+        <!-- Header -->
+        <div class="auth-header">
+            <div class="rounded-circle bg-white text-primary-purple d-flex align-items-center justify-content-center mx-auto mb-3" 
+                 style="width: 50px; height: 50px; font-weight: 800; font-size: 1.5rem;">
+                <i class="fas fa-envelope-open-text"></i>
+            </div>
+            <h4 class="mb-1 fw-bold">Verify Your Email</h4>
+            <p class="mb-0 small text-white-50">Activation link verification check</p>
+        </div>
+
+        <!-- Form Body -->
+        <div class="p-4 p-md-5 text-center">
+            <p class="text-muted small mb-4">
+                Thank you for registering with Kudumbashree Digital Management System! We have dispatched a confirmation hyperlink to your profile's inbox.
+            </p>
+            
+            <div class="alert alert-info card-kudumbashree border-0 px-3 py-2.5 mb-4 text-start">
+                <small class="fw-semibold text-primary"><i class="fas fa-info-circle me-1"></i>Action Required:</small>
+                <p class="mb-0 text-muted small">Please inspect your spam or junk folder if you do not spot the confirmation email within 5 minutes.</p>
+            </div>
+
+            <!-- Resend Link -->
+            <a href="#" class="btn btn-kudumbashree-primary w-100 py-2.5 shadow-sm mb-3">
+                <i class="fas fa-redo me-2"></i>Resend Verification Link
+            </a>
+
+            <!-- Return to landing page -->
+            <a href="{% url 'login' %}" class="text-primary-green fw-bold text-decoration-none small">Go back to Login Page</a>
+        </div>
+    </div>
+</div>
+{% endblock %}

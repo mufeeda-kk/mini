@@ -1,0 +1,291 @@
+{% extends 'base.html' %}
+{% load static %}
+{% load custom_filters %}
+
+{% block title %}Attendance - Kudumbashree Digital Management System{% endblock %}
+
+{% block content %}
+<!-- Breadcrumb Header -->
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card-kudumbashree border-0 bg-white p-4 d-flex justify-content-between align-items-center flex-wrap gap-3">
+            <div>
+                <h4 class="mb-1 fw-bold text-primary-purple"><i class="fas fa-calendar-check me-2"></i>Attendance Registry</h4>
+                <p class="text-muted mb-0 small">Log, filter, and audit Ayalkootam member attendance registers.</p>
+            </div>
+            <div class="d-flex align-items-center gap-2">
+                <button onclick="window.print()" class="btn btn-kudumbashree-outline-purple shadow-sm">
+                    <i class="fas fa-print me-2"></i>Export Attendance Report
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Attendance KPI Cards -->
+<div class="row g-4 mb-4">
+    <div class="col-md-2.5 col-sm-6 col-lg">
+        <div class="stat-card shadow-sm">
+            <div class="d-flex align-items-center justify-content-between mb-2">
+                <span class="text-muted small fw-semibold text-uppercase">Total Members</span>
+                <div class="stat-icon-wrapper stat-purple"><i class="fas fa-users"></i></div>
+            </div>
+            <h3 class="fw-bold mb-0 text-dark">{{ total_members }}</h3>
+            <small class="text-muted">Registered in unit</small>
+        </div>
+    </div>
+    <div class="col-md-2.5 col-sm-6 col-lg">
+        <div class="stat-card shadow-sm">
+            <div class="d-flex align-items-center justify-content-between mb-2">
+                <span class="text-muted small fw-semibold text-uppercase">Present Today</span>
+                <div class="stat-icon-wrapper stat-green"><i class="fas fa-user-check"></i></div>
+            </div>
+            <h3 class="fw-bold mb-0 text-success">{{ present_today }}</h3>
+            <small class="text-muted">Checked in</small>
+        </div>
+    </div>
+    <div class="col-md-2.5 col-sm-6 col-lg">
+        <div class="stat-card shadow-sm">
+            <div class="d-flex align-items-center justify-content-between mb-2">
+                <span class="text-muted small fw-semibold text-uppercase">Absent Today</span>
+                <div class="stat-icon-wrapper stat-danger"><i class="fas fa-user-times"></i></div>
+            </div>
+            <h3 class="fw-bold mb-0 text-danger">{{ absent_today }}</h3>
+            <small class="text-muted">Not present</small>
+        </div>
+    </div>
+    <div class="col-md-2.5 col-sm-6 col-lg">
+        <div class="stat-card shadow-sm">
+            <div class="d-flex align-items-center justify-content-between mb-2">
+                <span class="text-muted small fw-semibold text-uppercase">Today's Rate</span>
+                <div class="stat-icon-wrapper stat-purple" style="color: var(--primary-purple); background: var(--light-purple);"><i class="fas fa-chart-line"></i></div>
+            </div>
+            <h3 class="fw-bold mb-0 text-primary-purple">{{ attendance_pct }}%</h3>
+            <small class="text-muted">Daily ratio</small>
+        </div>
+    </div>
+    <div class="col-md-2.5 col-sm-6 col-lg">
+        <div class="stat-card shadow-sm">
+            <div class="d-flex align-items-center justify-content-between mb-2">
+                <span class="text-muted small fw-semibold text-uppercase">Monthly Average</span>
+                <div class="stat-icon-wrapper stat-warning"><i class="fas fa-percentage"></i></div>
+            </div>
+            <h3 class="fw-bold mb-0 text-warning">{{ monthly_attendance_rate }}%</h3>
+            <small class="text-muted">Unit running average</small>
+        </div>
+    </div>
+</div>
+
+<!-- Main grid panel -->
+<div class="row g-4 mb-4">
+    <!-- Today's Attendance Checksheet list -->
+    <div class="col-lg-8">
+        <div class="card-kudumbashree border-0 bg-white shadow-sm h-100">
+            <div class="card-header-custom d-flex justify-content-between align-items-center flex-wrap gap-2">
+                <h5 class="mb-0 fw-bold"><i class="fas fa-clipboard-list text-primary-green me-2"></i>Daily Checksheet</h5>
+                
+                <!-- Search & Date Filter Form -->
+                <form method="GET" action="{% url 'attendance' %}" class="d-flex gap-2 align-items-center">
+                    <input type="text" name="search" class="form-control form-control-sm table-search-input" data-target-table="attendance-table" placeholder="Search members..." value="{{ search_query }}" style="width: 150px;">
+                    <input type="date" name="date" class="form-control form-control-sm" value="{{ selected_date|date:'Y-m-d' }}" onchange="this.form.submit()">
+                </form>
+            </div>
+            <div class="p-3">
+                {% if profile.role == 'president' or profile.role == 'secretary' %}
+                    <form method="POST" action="{% url 'attendance_mark_manual' %}">
+                        {% csrf_token %}
+                        <input type="hidden" name="date" value="{{ selected_date|date:'Y-m-d' }}">
+                        <div class="table-responsive">
+                            <table class="table table-custom table-hover align-middle mb-0" id="attendance-table">
+                                <thead>
+                                    <tr>
+                                        <th class="sortable-header">Member Name</th>
+                                        <th class="text-center">Status (Present / Absent)</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for mb in group_members %}
+                                        <tr>
+                                            <td>
+                                                <div class="d-flex align-items-center gap-2">
+                                                    <div class="rounded-circle bg-light text-primary d-flex align-items-center justify-content-center fw-bold" style="width: 32px; height: 32px;">
+                                                        {{ mb.user.username|slice:":1"|upper }}
+                                                    </div>
+                                                    <strong>{{ mb.user.get_full_name|default:mb.user.username }}</strong>
+                                                </div>
+                                            </td>
+                                            <td>
+                                                <div class="attendance-toggle">
+                                                    <span class="text-danger small fw-semibold">Absent</span>
+                                                    <label class="attendance-switch">
+                                                        <!-- Present / Absent switch checkbox -->
+                                                        <input type="checkbox" name="status_{{ mb.user.id }}" value="present" 
+                                                               {% if marked_dict|get_item:mb.user.id == 'present' or not marked_dict %}checked{% endif %}>
+                                                        <span class="slider-attendance"></span>
+                                                    </label>
+                                                    <span class="text-success small fw-semibold">Present</span>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    {% empty %}
+                                        <tr class="empty-row">
+                                            <td colspan="2" class="text-center py-4 text-muted">No approved active members found.</td>
+                                        </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                        <div class="text-end p-3 border-top mt-3">
+                            <button type="submit" class="btn btn-kudumbashree-secondary px-4 shadow-sm"><i class="fas fa-save me-1"></i>Commit Daily Attendance</button>
+                        </div>
+                    </form>
+                {% else %}
+                    <!-- Read-Only table view for Members and System Admin -->
+                    <div class="table-responsive">
+                        <table class="table table-custom table-hover align-middle mb-0" id="attendance-table">
+                            <thead>
+                                <tr>
+                                    <th>Member Name</th>
+                                    <th class="text-center">Checked-In Status</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for mb in group_members %}
+                                    <tr>
+                                        <td><strong>{{ mb.user.get_full_name|default:mb.user.username }}</strong></td>
+                                        <td class="text-center">
+                                            {% if marked_dict|get_item:mb.user.id == 'present' %}
+                                                <span class="badge-kudumbashree badge-success">Present</span>
+                                            {% else %}
+                                                <span class="badge-kudumbashree badge-danger">Absent</span>
+                                            {% endif %}
+                                        </td>
+                                    </tr>
+                                {% empty %}
+                                    <tr class="empty-row">
+                                        <td colspan="2" class="text-center py-4 text-muted">No records found.</td>
+                                    </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Monthly Calendar Layout Mockup -->
+    <div class="col-lg-4">
+        <div class="card-kudumbashree border-0 bg-white shadow-sm h-100">
+            <div class="card-header-custom">
+                <h5 class="mb-0 fw-bold"><i class="fas fa-calendar-alt text-primary-purple me-2"></i>Roster Calendar</h5>
+            </div>
+            <div class="p-4">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <span class="fw-bold text-dark">{{ selected_date|date:"F Y" }}</span>
+                    <div class="d-flex gap-1">
+                        <button class="btn btn-sm btn-light border p-1 px-2" disabled><i class="fas fa-chevron-left small"></i></button>
+                        <button class="btn btn-sm btn-light border p-1 px-2" disabled><i class="fas fa-chevron-right small"></i></button>
+                    </div>
+                </div>
+                <div class="calendar-grid-card">
+                    <div class="calendar-day-label">S</div>
+                    <div class="calendar-day-label">M</div>
+                    <div class="calendar-day-label">T</div>
+                    <div class="calendar-day-label">W</div>
+                    <div class="calendar-day-label">T</div>
+                    <div class="calendar-day-label">F</div>
+                    <div class="calendar-day-label">S</div>
+                    
+                    <!-- Days list mock -->
+                    <div class="calendar-cell text-muted">28</div>
+                    <div class="calendar-cell text-muted">29</div>
+                    <div class="calendar-cell text-muted">30</div>
+                    <div class="calendar-cell">1</div>
+                    <div class="calendar-cell">2</div>
+                    <div class="calendar-cell bg-success text-white">3</div>
+                    <div class="calendar-cell">4</div>
+                    <div class="calendar-cell">5</div>
+                    <div class="calendar-cell bg-success text-white">6</div>
+                    <div class="calendar-cell">7</div>
+                    <div class="calendar-cell">8</div>
+                    <div class="calendar-cell">9</div>
+                    <div class="calendar-cell bg-danger text-white">10</div>
+                    <div class="calendar-cell">11</div>
+                    <div class="calendar-cell">12</div>
+                    <div class="calendar-cell bg-success text-white">13</div>
+                    <div class="calendar-cell">14</div>
+                    <div class="calendar-cell">15</div>
+                    <div class="calendar-cell">16</div>
+                    <div class="calendar-cell">17</div>
+                    <div class="calendar-cell bg-success text-white">18</div>
+                    <div class="calendar-cell">19</div>
+                    <div class="calendar-cell">20</div>
+                    <div class="calendar-cell">21</div>
+                    <div class="calendar-cell">22</div>
+                    <div class="calendar-cell bg-success text-white">23</div>
+                    <div class="calendar-cell">24</div>
+                    <div class="calendar-cell">25</div>
+                    <div class="calendar-cell">26</div>
+                    <div class="calendar-cell">27</div>
+                    <div class="calendar-cell">28</div>
+                    <div class="calendar-cell">29</div>
+                    <div class="calendar-cell">30</div>
+                    <div class="calendar-cell text-muted">1</div>
+                    <div class="calendar-cell text-muted">2</div>
+                </div>
+                <div class="d-flex justify-content-center gap-3 mt-4 small text-muted">
+                    <span><i class="fas fa-circle text-success me-1"></i>Present</span>
+                    <span><i class="fas fa-circle text-danger me-1"></i>Absent</span>
+                    <span><i class="fas fa-circle text-secondary me-1"></i>Not Logged</span>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Historical Logs -->
+<div class="row">
+    <div class="col-12">
+        <div class="card-kudumbashree border-0 bg-white shadow-sm">
+            <div class="card-header-custom">
+                <h5 class="mb-0 fw-bold"><i class="fas fa-history text-primary-purple me-2"></i> Roster History Logs</h5>
+            </div>
+            <div class="p-3">
+                <div class="table-responsive">
+                    <table class="table table-custom table-hover mb-0">
+                        <thead>
+                            <tr>
+                                <th>Date</th>
+                                <th>Member Name</th>
+                                <th>Checked status</th>
+                                <th>Recorded By</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for log in attendance_logs %}
+                                <tr>
+                                    <td>{{ log.date|date:"d M Y" }}</td>
+                                    <td><strong>{{ log.member.username }}</strong></td>
+                                    <td>
+                                        {% if log.status == 'present' %}
+                                            <span class="badge-kudumbashree badge-success">Present</span>
+                                        {% else %}
+                                            <span class="badge-kudumbashree badge-danger">Absent</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>{{ log.marked_by.username|default:"System" }}</td>
+                                </tr>
+                            {% empty %}
+                                <tr>
+                                    <td colspan="4" class="text-center py-4 text-muted">No attendance logs found in database histories.</td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

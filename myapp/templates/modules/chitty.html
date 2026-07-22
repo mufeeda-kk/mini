@@ -1,0 +1,109 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Chitty Savings - Kudumbashree Digital Management System{% endblock %}
+
+{% block content %}
+<!-- Header Banner -->
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card-kudumbashree border-0 bg-white p-4">
+            <h4 class="mb-1 fw-bold text-primary-purple"><i class="fas fa-coins me-2"></i>Chitty Savings Ledger</h4>
+            <p class="text-muted mb-0 small">Monitor weekly chitty contribution pools, monthly bids, and dividend savings accounts.</p>
+        </div>
+    </div>
+</div>
+
+<!-- Active Chitties cards lists -->
+<div class="row g-4 mb-4">
+    {% for chitty in chitties %}
+        <div class="col-md-6 col-lg-4">
+            <div class="card-kudumbashree border-0 bg-white h-100 shadow-sm">
+                <div class="card-header-custom">
+                    <h5 class="mb-0 fw-bold text-dark"><i class="fas fa-piggy-bank text-primary-purple me-2"></i>{{ chitty.name }}</h5>
+                </div>
+                <div class="p-4 d-flex flex-column gap-3">
+                    <div class="d-flex justify-content-between">
+                        <span class="text-muted small">Total Fund:</span>
+                        <strong class="text-dark">₹{{ chitty.total_amount|floatformat:2 }}</strong>
+                    </div>
+                    <div class="d-flex justify-content-between">
+                        <span class="text-muted small">Monthly Contribution:</span>
+                        <strong class="text-primary-green">₹{{ chitty.monthly_contribution|floatformat:2 }}</strong>
+                    </div>
+                    <div class="d-flex justify-content-between">
+                        <span class="text-muted small">Tenure Period:</span>
+                        <strong class="text-dark">{{ chitty.duration_months }} Months</strong>
+                    </div>
+                    <div class="d-flex justify-content-between">
+                        <span class="text-muted small">Start Date:</span>
+                        <strong class="text-dark">{{ chitty.start_date|date:"d M Y" }}</strong>
+                    </div>
+                    <hr class="my-1 border-light-subtle">
+                    <div class="text-center mt-2 small text-muted">
+                        <i class="fas fa-info-circle me-1 text-primary-purple"></i>Currently active and collecting
+                    </div>
+                </div>
+            </div>
+        </div>
+    {% empty %}
+        <div class="col-12 text-center text-muted py-4">No active chitty schemes registered.</div>
+    {% endfor %}
+</div>
+
+<!-- Payments Logs Ledger -->
+<div class="row">
+    <div class="col-12">
+        <div class="card-kudumbashree border-0 bg-white shadow-sm">
+            <div class="card-header-custom d-flex justify-content-between align-items-center flex-wrap gap-2">
+                <h5 class="mb-0 fw-bold"><i class="fas fa-history text-primary-purple me-2"></i>Chitty Transaction Records</h5>
+                <!-- Filter Search -->
+                <div class="d-flex gap-2 align-items-center d-print-none">
+                    <input type="text" class="form-control form-control-sm table-search-input" data-target-table="chitty-table" placeholder="Search logs..." style="width: 150px;">
+                    <button onclick="window.print()" class="btn btn-sm btn-kudumbashree-outline-purple"><i class="fas fa-print"></i></button>
+                </div>
+            </div>
+            <div class="p-3">
+                <div class="table-responsive">
+                    <table class="table table-custom table-hover mb-0" id="chitty-table">
+                        <thead>
+                            <tr>
+                                <th class="sortable-header">Contributor</th>
+                                <th class="sortable-header">Chitty Scheme</th>
+                                <th>Month Index</th>
+                                <th class="sortable-header">Paid Amount</th>
+                                <th>Transaction Date</th>
+                                <th>Reference Ref</th>
+                                <th>Sanction Status</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for pay in payments %}
+                                <tr>
+                                    <td><strong>{{ pay.member.username }}</strong></td>
+                                    <td>{{ pay.chitty.name }}</td>
+                                    <td>Month #{{ pay.month_number }}</td>
+                                    <td>₹{{ pay.amount|floatformat:2 }}</td>
+                                    <td>{{ pay.paid_date|date:"d M Y"|default:"-" }}</td>
+                                    <td><code class="small text-muted">{{ pay.transaction_id|default:"-" }}</code></td>
+                                    <td>
+                                        {% if pay.status == 'paid' %}
+                                            <span class="badge-kudumbashree badge-success">Completed</span>
+                                        {% else %}
+                                            <span class="badge-kudumbashree badge-pending">Pending Payment</span>
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                            {% empty %}
+                                <tr class="empty-row">
+                                    <td colspan="7" class="text-center py-4 text-muted">No chitty logs registered in database ledger.</td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

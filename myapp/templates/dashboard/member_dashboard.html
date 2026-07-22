@@ -1,0 +1,219 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Member Dashboard - Kudumbashree Digital Management System{% endblock %}
+
+{% block content %}
+<!-- Welcome Header Banner -->
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card-kudumbashree border-0 bg-white shadow-sm p-4">
+            <div class="d-flex align-items-center gap-3">
+                <div class="rounded-circle bg-primary text-white d-flex align-items-center justify-content-center fw-bold fs-4" style="width: 55px; height: 55px;">
+                    {{ request.user.username|slice:":1"|upper }}
+                </div>
+                <div>
+                    <h4 class="mb-0 fw-bold">Ayalkootam Member Passbook</h4>
+                    <p class="text-muted mb-0 small">Member: <strong>{{ request.user.get_full_name|default:request.user.username }}</strong> | Unit: <strong>{{ profile.group.name }}</strong></p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Dashboard KPI Stats Grid -->
+<div class="row g-4 mb-4">
+    <div class="col-md-4">
+        <div class="stat-card shadow-sm">
+            <div class="d-flex align-items-center justify-content-between mb-2">
+                <span class="text-muted small fw-semibold text-uppercase">Attendance Percentage</span>
+                <div class="stat-icon-wrapper stat-purple"><i class="fas fa-calendar-check"></i></div>
+            </div>
+            <h3 class="fw-bold mb-0 text-primary-purple">{{ attendance_pct }}%</h3>
+            <div class="progress mt-2" style="height: 6px;">
+                <div class="progress-bar bg-primary-purple" role="progressbar" style="width: {{ attendance_pct }}%" aria-valuenow="{{ attendance_pct }}" aria-valuemin="0" aria-valuemax="100"></div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="stat-card shadow-sm">
+            <div class="d-flex align-items-center justify-content-between mb-2">
+                <span class="text-muted small fw-semibold text-uppercase">Active Credit Balance</span>
+                <div class="stat-icon-wrapper stat-green"><i class="fas fa-hand-holding-usd"></i></div>
+            </div>
+            <h3 class="fw-bold mb-0">
+                {% if active_loan %}
+                    ₹{{ active_loan.amount|floatformat:2 }}
+                {% else %}
+                    ₹0.00
+                {% endif %}
+            </h3>
+            <small class="text-muted d-block mt-1">
+                {% if active_loan %}
+                    Repaid: ₹{{ active_loan.repaid_amount|floatformat:2 }} (Status: Approved)
+                {% else %}
+                    No active loan ledger
+                {% endif %}
+            </small>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="stat-card shadow-sm">
+            <div class="d-flex align-items-center justify-content-between mb-2">
+                <span class="text-muted small fw-semibold text-uppercase">Chitty Payments Status</span>
+                <div class="stat-icon-wrapper stat-warning"><i class="fas fa-coins"></i></div>
+            </div>
+            {% if chitty_payments.first.status == 'pending' %}
+                <h3 class="fw-bold mb-0 text-warning">Pending Payment</h3>
+                <small class="text-muted">Instalment due: ₹{{ chitty_payments.first.amount|floatformat:2 }}</small>
+            {% else %}
+                <h3 class="fw-bold mb-0 text-success">All Clear</h3>
+                <small class="text-muted">No pending dues for this month</small>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<!-- Main Sections Grid -->
+<div class="row g-4 mb-4">
+    <!-- Chitty instalments tracker -->
+    <div class="col-lg-7">
+        <div class="card-kudumbashree border-0 bg-white shadow-sm h-100">
+            <div class="card-header-custom">
+                <h5 class="mb-0 fw-bold"><i class="fas fa-coins text-primary-purple me-2"></i>My Chitty Payments Ledger</h5>
+            </div>
+            <div class="p-3">
+                <div class="table-responsive" style="max-height: 280px; overflow-y: auto;">
+                    <table class="table table-custom table-hover mb-0">
+                        <thead>
+                            <tr>
+                                <th>Chitty Scheme</th>
+                                <th>Instalment</th>
+                                <th>Due Amount</th>
+                                <th>Status / Action</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for pay in chitty_payments %}
+                                <tr>
+                                    <td><strong>{{ pay.chitty.name }}</strong></td>
+                                    <td>Month {{ pay.month_number }}</td>
+                                    <td>₹{{ pay.amount|floatformat:2 }}</td>
+                                    <td>
+                                        {% if pay.status == 'paid' %}
+                                            <span class="badge-kudumbashree badge-success">Paid</span>
+                                        {% else %}
+                                            <form method="POST" action="{% url 'chitty_pay' pay.id %}">
+                                                {% csrf_token %}
+                                                <button type="submit" class="btn btn-sm btn-kudumbashree-primary py-1 px-3" style="font-size: 0.75rem;">Pay Now</button>
+                                            </form>
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                            {% empty %}
+                                <tr>
+                                    <td colspan="4" class="text-center py-4 text-muted">You are not enrolled in any chitty schemes.</td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Quick actions control panel -->
+    <div class="col-lg-5">
+        <div class="card-kudumbashree border-0 bg-white shadow-sm h-100">
+            <div class="card-header-custom">
+                <h5 class="mb-0 fw-bold"><i class="fas fa-bolt text-primary-green me-2"></i>Quick Actions</h5>
+            </div>
+            <div class="p-4 d-flex flex-column gap-3">
+                <a href="{% url 'attendance' %}" class="btn btn-light border w-100 text-start py-2.5 text-dark d-flex align-items-center justify-content-between">
+                    <span><i class="fas fa-calendar-check me-2 text-primary-purple"></i>View My Attendance History</span>
+                    <i class="fas fa-chevron-right text-muted"></i>
+                </a>
+                <a href="{% url 'meetings_events' %}" class="btn btn-light border w-100 text-start py-2.5 text-dark d-flex align-items-center justify-content-between">
+                    <span><i class="fas fa-calendar-alt me-2 text-primary-green"></i>View Assemblies Schedule</span>
+                    <i class="fas fa-chevron-right text-muted"></i>
+                </a>
+                <a href="{% url 'schemes' %}" class="btn btn-light border w-100 text-start py-2.5 text-dark d-flex align-items-center justify-content-between">
+                    <span><i class="fas fa-heart me-2 text-danger"></i>Apply Welfare Schemes</span>
+                    <i class="fas fa-chevron-right text-muted"></i>
+                </a>
+                <a href="{% url 'complaints' %}" class="btn btn-light border w-100 text-start py-2.5 text-dark d-flex align-items-center justify-content-between">
+                    <span><i class="fas fa-gavel me-2 text-warning"></i>Submit Grievance Complaint</span>
+                    <i class="fas fa-chevron-right text-muted"></i>
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Meeting calendar timelines & welfare applications -->
+<div class="row g-4">
+    <!-- Timeline Assemblies -->
+    <div class="col-md-6">
+        <div class="card-kudumbashree border-0 bg-white shadow-sm h-100">
+            <div class="card-header-custom">
+                <h5 class="mb-0 fw-bold"><i class="fas fa-bullhorn text-primary-purple me-2"></i>Upcoming Unit Meetings</h5>
+            </div>
+            <div class="p-4">
+                <div class="timeline" style="max-height: 260px; overflow-y: auto;">
+                    {% for mtg in meetings %}
+                        <div class="timeline-item">
+                            <div class="timeline-marker"></div>
+                            <h6 class="fw-bold mb-1">{{ mtg.title }}</h6>
+                            <small class="text-muted d-block mb-1"><i class="fas fa-clock me-1"></i>{{ mtg.date_time|date:"d M Y, h:i A" }} | <i class="fas fa-map-marker-alt me-1"></i>{{ mtg.venue }}</small>
+                            <p class="text-muted small mb-0">{{ mtg.agenda|truncatechars:90 }}</p>
+                        </div>
+                    {% empty %}
+                        <p class="text-muted text-center py-4">No upcoming assemblies scheduled.</p>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Welfare list -->
+    <div class="col-md-6">
+        <div class="card-kudumbashree border-0 bg-white shadow-sm h-100">
+            <div class="card-header-custom">
+                <h5 class="mb-0 fw-bold"><i class="fas fa-heart text-danger me-2"></i>Welfare Scheme Tracking</h5>
+            </div>
+            <div class="p-3">
+                <div class="table-responsive" style="max-height: 260px; overflow-y: auto;">
+                    <table class="table table-custom table-hover mb-0">
+                        <thead>
+                            <tr>
+                                <th>Scheme Title</th>
+                                <th>Status</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for app in welfare_applications %}
+                                <tr>
+                                    <td><strong>{{ app.scheme.title }}</strong></td>
+                                    <td>
+                                        {% if app.status == 'approved' %}
+                                            <span class="badge-kudumbashree badge-success">Approved</span>
+                                        {% elif app.status == 'rejected' %}
+                                            <span class="badge-kudumbashree badge-danger">Rejected</span>
+                                        {% else %}
+                                            <span class="badge-kudumbashree badge-pending">Under Review</span>
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                            {% empty %}
+                                <tr>
+                                    <td colspan="2" class="text-center py-4 text-muted">You have not registered for any active welfare schemes.</td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

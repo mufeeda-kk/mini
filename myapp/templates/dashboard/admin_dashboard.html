@@ -1,0 +1,191 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Admin Dashboard - Kudumbashree Digital Management System{% endblock %}
+
+{% block content %}
+<!-- Breadcrumb Header -->
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h4 class="mb-0 fw-bold">Global System Operations</h4>
+        <small class="text-muted">Kudumbashree State Poverty Eradication Mission</small>
+    </div>
+    <div class="d-flex gap-2">
+        <a href="{% url 'approval_dashboard' %}" class="btn btn-kudumbashree-primary shadow-sm">
+            <i class="fas fa-user-check me-2"></i>Roster Approvals Page
+        </a>
+    </div>
+</div>
+
+<!-- Statistics Cards Grid -->
+<div class="row g-4 mb-4">
+    <div class="col-xl-3 col-sm-6">
+        <div class="stat-card shadow-sm">
+            <div class="d-flex align-items-center justify-content-between mb-2">
+                <span class="text-muted small fw-semibold text-uppercase">Ayalkootam Units</span>
+                <div class="stat-icon-wrapper stat-purple"><i class="fas fa-network-wired"></i></div>
+            </div>
+            <h3 class="fw-bold mb-0">{{ total_groups }}</h3>
+            <small class="text-success fw-semibold"><i class="fas fa-caret-up me-1"></i>+4 this month</small>
+        </div>
+    </div>
+    <div class="col-xl-3 col-sm-6">
+        <div class="stat-card shadow-sm">
+            <div class="d-flex align-items-center justify-content-between mb-2">
+                <span class="text-muted small fw-semibold text-uppercase">Active Members</span>
+                <div class="stat-icon-wrapper stat-green"><i class="fas fa-users"></i></div>
+            </div>
+            <h3 class="fw-bold mb-0">{{ total_members }}</h3>
+            <small class="text-success fw-semibold"><i class="fas fa-caret-up me-1"></i>+24 this week</small>
+        </div>
+    </div>
+    <div class="col-xl-3 col-sm-6">
+        <div class="stat-card shadow-sm">
+            <div class="d-flex align-items-center justify-content-between mb-2">
+                <span class="text-muted small fw-semibold text-uppercase">Office Bearers</span>
+                <div class="stat-icon-wrapper stat-warning"><i class="fas fa-user-shield"></i></div>
+            </div>
+            <h3 class="fw-bold mb-0">{% widthratio total_presidents 1 2 %}</h3>
+            <small class="text-muted">Presidents & Secretaries</small>
+        </div>
+    </div>
+    <div class="col-xl-3 col-sm-6">
+        <div class="stat-card shadow-sm">
+            <div class="d-flex align-items-center justify-content-between mb-2">
+                <span class="text-muted small fw-semibold text-uppercase">Credit Disbursed</span>
+                <div class="stat-icon-wrapper stat-danger"><i class="fas fa-hand-holding-usd"></i></div>
+            </div>
+            <h3 class="fw-bold mb-0">₹{{ total_loans|floatformat:2 }}</h3>
+            <small class="text-danger fw-semibold"><i class="fas fa-info-circle me-1"></i>Interest Rate at 4%</small>
+        </div>
+    </div>
+</div>
+
+<!-- Main Approvals Queue Grid -->
+<div class="row g-4 mb-4">
+    <!-- Pending President/Secretary Approvals -->
+    <div class="col-lg-8">
+        <div class="card-kudumbashree border-0 bg-white shadow-sm h-100">
+            <div class="card-header-custom">
+                <h5 class="mb-0 fw-bold"><i class="fas fa-clipboard-list text-primary-purple me-2"></i>Bearer Registration Requests</h5>
+                <span class="badge bg-purple-subtle text-primary-purple badge-kudumbashree">{{ pending_approvals|length }} Pending</span>
+            </div>
+            <div class="p-3">
+                <div class="table-responsive" style="max-height: 380px;">
+                    <table class="table table-custom table-hover mb-0">
+                        <thead>
+                            <tr>
+                                <th>Bearer Name</th>
+                                <th>Assigned Group</th>
+                                <th>Role Type</th>
+                                <th>Status</th>
+                                <th>Verification Action</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for prof in pending_approvals %}
+                                <tr>
+                                    <td>
+                                        <div class="d-flex align-items-center gap-2">
+                                            <div class="rounded-circle bg-light text-primary d-flex align-items-center justify-content-center fw-bold" style="width: 32px; height: 32px;">
+                                                {{ prof.user.username|slice:":1"|upper }}
+                                            </div>
+                                            <div>
+                                                <h6 class="mb-0 fw-bold text-dark">{{ prof.user.get_full_name|default:prof.user.username }}</h6>
+                                                <small class="text-muted">{{ prof.phone }}</small>
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td><strong>{{ prof.group.name|default:"Not Assigned" }}</strong></td>
+                                    <td><span class="badge bg-light text-dark border">{{ prof.get_role_display }}</span></td>
+                                    <td><span class="badge-kudumbashree badge-pending">Pending Admin</span></td>
+                                    <td>
+                                        <div class="d-flex gap-2">
+                                            <a href="{% url 'verify_member_action' prof.id 'approve' %}" class="btn btn-sm btn-kudumbashree-secondary text-white py-1 px-3" style="font-size: 0.75rem;">Approve</a>
+                                            <a href="{% url 'verify_member_action' prof.id 'reject' %}" class="btn btn-sm btn-outline-danger py-1 px-3" style="font-size: 0.75rem;">Reject</a>
+                                        </div>
+                                    </td>
+                                </tr>
+                            {% empty %}
+                                <tr>
+                                    <td colspan="5" class="text-center py-5 text-muted">
+                                        <i class="fas fa-users-slash fs-1 mb-3 text-light"></i>
+                                        <p class="mb-0">Office Bearer registration approval queue is empty.</p>
+                                    </td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Doughnut Telemetry Chart -->
+    <div class="col-lg-4">
+        <div class="card-kudumbashree border-0 bg-white shadow-sm h-100">
+            <div class="card-header-custom">
+                <h5 class="mb-0 fw-bold"><i class="fas fa-chart-line text-primary-green me-2"></i>Telemetry Distribution</h5>
+            </div>
+            <div class="p-4 d-flex flex-column justify-content-center align-items-center" style="height: 320px;">
+                <canvas id="adminChart" class="w-100 h-100"></canvas>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Activity Timelines -->
+<div class="row g-4">
+    <div class="col-12">
+        <div class="card-kudumbashree border-0 bg-white shadow-sm">
+            <div class="card-header-custom">
+                <h5 class="mb-0 fw-bold"><i class="fas fa-history text-primary-purple me-2"></i>Recent Portal System Activities</h5>
+            </div>
+            <div class="p-3">
+                <div class="table-responsive">
+                    <table class="table table-custom table-hover mb-0">
+                        <thead>
+                            <tr>
+                                <th>Activity Topic</th>
+                                <th>Initiator</th>
+                                <th>Timestamp</th>
+                                <th>Current Status</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for act in recent_activities %}
+                                <tr>
+                                    <td><strong>{{ act.title }}</strong></td>
+                                    <td>{{ act.member.username }}</td>
+                                    <td>{{ act.created_at|date:"d M Y, h:i A" }}</td>
+                                    <td>
+                                        {% if act.status == 'resolved' %}
+                                            <span class="badge-kudumbashree badge-success">Resolved</span>
+                                        {% else %}
+                                            <span class="badge-kudumbashree badge-pending">Submitted</span>
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                            {% empty %}
+                                <tr>
+                                    <td colspan="4" class="text-center py-4 text-muted">No recent activities logged in system dashboard.</td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.addEventListener("DOMContentLoaded", function () {
+        if (window.KudumbashreeCharts) {
+            window.KudumbashreeCharts.renderPieChart('adminChart', ['Groups', 'Members', 'Chitties'], [{{ total_groups }}, {{ total_members }}, {{ total_chitty }}]);
+        }
+    });
+</script>
+{% endblock %}

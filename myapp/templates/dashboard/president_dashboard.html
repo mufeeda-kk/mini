@@ -1,0 +1,221 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Office Bearer Dashboard - Kudumbashree Digital Management System{% endblock %}
+
+{% block content %}
+<!-- Welcome Header Banner -->
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card-kudumbashree border-0 bg-white shadow-sm p-4">
+            <div class="d-flex align-items-center gap-3">
+                <div class="stat-icon-wrapper stat-purple fs-3 rounded-circle" style="width: 55px; height: 55px;">
+                    <i class="fas fa-home"></i>
+                </div>
+                <div>
+                    <h4 class="mb-0 fw-bold">Welcome back, {{ request.user.username|capfirst }}</h4>
+                    <p class="text-muted mb-0 small">Operational control center for <strong>{{ group.name }}</strong> (Reg: {{ group.registration_number }})</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Workflow division alerts d-print-none -->
+<div class="row mb-4 d-print-none">
+    <div class="col-12">
+        <div class="alert alert-info border-0 card-kudumbashree px-4 py-3 shadow-sm mb-0">
+            <div class="d-flex align-items-center justify-content-between flex-wrap gap-2">
+                <div class="d-flex align-items-center">
+                    <i class="fas fa-info-circle text-primary me-2 fs-5"></i>
+                    <div>
+                        <strong>Responsibility Rulings:</strong> 
+                        {% if profile.role == 'president' %}
+                            As President, you primarily oversee member registrations, meetings schedules, loan approvals, and audit reports.
+                        {% else %}
+                            As Secretary, you primarily manage manual attendance logs, meeting notes, notifications, expenses ledger, and inventory items.
+                        {% endif %}
+                    </div>
+                </div>
+                <div>
+                    <a href="{% url 'approval_dashboard' %}" class="btn btn-sm btn-kudumbashree-primary text-white py-1.5 px-3" style="font-size: 0.8rem;">Go to Approvals Portal</a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Statistics Cards -->
+<div class="row g-4 mb-4">
+    <div class="col-xl-3 col-sm-6">
+        <div class="stat-card shadow-sm">
+            <div class="d-flex align-items-center justify-content-between mb-2">
+                <span class="text-muted small fw-semibold text-uppercase">Members</span>
+                <div class="stat-icon-wrapper stat-purple"><i class="fas fa-users"></i></div>
+            </div>
+            <h3 class="fw-bold mb-0">{{ members_count }}</h3>
+            <small class="text-success fw-semibold">Active digital members</small>
+        </div>
+    </div>
+    <div class="col-xl-3 col-sm-6">
+        <div class="stat-card shadow-sm">
+            <div class="d-flex align-items-center justify-content-between mb-2">
+                <span class="text-muted small fw-semibold text-uppercase">Monthly Revenue</span>
+                <div class="stat-icon-wrapper stat-green"><i class="fas fa-wallet"></i></div>
+            </div>
+            <h3 class="fw-bold mb-0">₹{{ income|floatformat:2 }}</h3>
+            <small class="text-muted">Recorded logs</small>
+        </div>
+    </div>
+    <div class="col-xl-3 col-sm-6">
+        <div class="stat-card shadow-sm">
+            <div class="d-flex align-items-center justify-content-between mb-2">
+                <span class="text-muted small fw-semibold text-uppercase">Monthly Expense</span>
+                <div class="stat-icon-wrapper stat-danger"><i class="fas fa-receipt"></i></div>
+            </div>
+            <h3 class="fw-bold mb-0">₹{{ expenses|floatformat:2 }}</h3>
+            <small class="text-muted">Overhead costs</small>
+        </div>
+    </div>
+    <div class="col-xl-3 col-sm-6">
+        <div class="stat-card shadow-sm">
+            <div class="d-flex align-items-center justify-content-between mb-2">
+                <span class="text-muted small fw-semibold text-uppercase">Group Balance</span>
+                <div class="stat-icon-wrapper stat-warning"><i class="fas fa-piggy-bank"></i></div>
+            </div>
+            <h3 class="fw-bold mb-0" style="color: {% if balance >= 0 %}var(--success){% else %}var(--danger){% endif %};">₹{{ balance|floatformat:2 }}</h3>
+            <small class="text-muted">Available in vault</small>
+        </div>
+    </div>
+</div>
+
+<!-- Main Grid -->
+<div class="row g-4 mb-4">
+    <!-- Member Registrations Pending Queue -->
+    <div class="col-lg-8">
+        <div class="card-kudumbashree border-0 bg-white shadow-sm h-100">
+            <div class="card-header-custom">
+                <h5 class="mb-0 fw-bold"><i class="fas fa-user-clock text-primary-purple me-2"></i>Pending Member Signups</h5>
+                <span class="badge bg-purple-subtle text-primary-purple badge-kudumbashree">{{ pending_members|length }} Pending</span>
+            </div>
+            <div class="p-3">
+                <div class="table-responsive" style="max-height: 380px;">
+                    <table class="table table-custom table-hover mb-0">
+                        <thead>
+                            <tr>
+                                <th>Name</th>
+                                <th>Phone</th>
+                                <th>Role</th>
+                                <th>Verification Action</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for mem in pending_members %}
+                                <tr>
+                                    <td>
+                                        <div class="d-flex align-items-center gap-2">
+                                            <div class="rounded-circle bg-light text-primary d-flex align-items-center justify-content-center fw-bold" style="width: 32px; height: 32px;">
+                                                {{ mem.user.username|slice:":1"|upper }}
+                                            </div>
+                                            <div>
+                                                <h6 class="mb-0 fw-bold text-dark">{{ mem.user.get_full_name|default:mem.user.username }}</h6>
+                                                <small class="text-muted">{{ mem.user.email }}</small>
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td>{{ mem.phone }}</td>
+                                    <td><span class="badge bg-light text-dark">{{ mem.get_role_display }}</span></td>
+                                    <td>
+                                        <div class="d-flex gap-2">
+                                            <a href="{% url 'verify_member_action' mem.id 'approve' %}" class="btn btn-sm btn-kudumbashree-secondary text-white py-1 px-3" style="font-size: 0.75rem;">Approve</a>
+                                            <a href="{% url 'verify_member_action' mem.id 'reject' %}" class="btn btn-sm btn-outline-danger py-1 px-3" style="font-size: 0.75rem;">Reject</a>
+                                        </div>
+                                    </td>
+                                </tr>
+                            {% empty %}
+                                <tr>
+                                    <td colspan="4" class="text-center py-5 text-muted">
+                                        <i class="fas fa-check-double fs-1 mb-3 text-light"></i>
+                                        <p class="mb-0">Member registration approval queue is empty.</p>
+                                    </td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Quick Control Panels -->
+    <div class="col-lg-4">
+        <div class="card-kudumbashree border-0 bg-white shadow-sm h-100">
+            <div class="card-header-custom">
+                <h5 class="mb-0 fw-bold"><i class="fas fa-bolt text-primary-green me-2"></i>Quick Actions</h5>
+            </div>
+            <div class="p-4 d-flex flex-column gap-3">
+                <a href="{% url 'attendance' %}" class="btn btn-kudumbashree-primary w-100 text-start py-2.5 shadow-sm d-flex align-items-center justify-content-between">
+                    <span><i class="fas fa-calendar-check me-2"></i>Mark Daily Attendance</span>
+                    <i class="fas fa-chevron-right"></i>
+                </a>
+                <a href="{% url 'meetings_events' %}" class="btn btn-kudumbashree-secondary w-100 text-start py-2.5 shadow-sm d-flex align-items-center justify-content-between">
+                    <span><i class="fas fa-calendar-plus me-2"></i>Schedule Meeting Notice</span>
+                    <i class="fas fa-chevron-right"></i>
+                </a>
+                <a href="{% url 'finance' %}" class="btn btn-light border w-100 text-start py-2.5 text-dark d-flex align-items-center justify-content-between">
+                    <span><i class="fas fa-file-invoice-dollar me-2 text-primary-purple"></i>Log Income / Expenditure</span>
+                    <i class="fas fa-chevron-right text-muted"></i>
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Meeting Agenda & Reserves Chart -->
+<div class="row g-4">
+    <!-- Timeline -->
+    <div class="col-md-6">
+        <div class="card-kudumbashree border-0 bg-white shadow-sm h-100">
+            <div class="card-header-custom">
+                <h5 class="mb-0 fw-bold"><i class="fas fa-calendar-day text-primary-purple me-2"></i>Upcoming Assemblies</h5>
+            </div>
+            <div class="p-4">
+                <div class="timeline" style="max-height: 260px; overflow-y: auto;">
+                    {% for mtg in upcoming_meetings %}
+                        <div class="timeline-item">
+                            <div class="timeline-marker"></div>
+                            <h6 class="fw-bold mb-1">{{ mtg.title }}</h6>
+                            <p class="mb-1 text-muted small"><i class="fas fa-clock me-1"></i>{{ mtg.date_time|date:"d M Y, h:i A" }} | <i class="fas fa-map-marker-alt me-1"></i>{{ mtg.venue }}</p>
+                            <small class="d-block text-muted-50">{{ mtg.agenda|truncatechars:90 }}</small>
+                        </div>
+                    {% empty %}
+                        <p class="text-muted text-center py-4">No upcoming assemblies scheduled.</p>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Chart -->
+    <div class="col-md-6">
+        <div class="card-kudumbashree border-0 bg-white shadow-sm h-100">
+            <div class="card-header-custom">
+                <h5 class="mb-0 fw-bold"><i class="fas fa-chart-bar text-primary-green me-2"></i>Unit Balance Sheet</h5>
+            </div>
+            <div class="p-4 d-flex justify-content-center align-items-center" style="height: 250px;">
+                <canvas id="balanceChart" class="w-100 h-100"></canvas>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.addEventListener("DOMContentLoaded", function () {
+        if (window.KudumbashreeCharts) {
+            window.KudumbashreeCharts.renderBarChart('balanceChart', ['Revenue', 'Expense'], [{{ income }}, {{ expenses }}], 'Cash Balance Sheet', '#6CB33F');
+        }
+    });
+</script>
+{% endblock %}

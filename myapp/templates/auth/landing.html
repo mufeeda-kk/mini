@@ -1,0 +1,252 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Welcome - Kudumbashree Digital Management System{% endblock %}
+
+{% block guest_content %}
+<!-- Public Landing Navigation -->
+<nav class="navbar navbar-expand-lg navbar-light bg-white border-bottom py-3 sticky-top">
+    <div class="container">
+        <a class="navbar-brand d-flex align-items-center gap-2" href="#">
+            <div class="rounded-circle d-flex align-items-center justify-content-center text-white" 
+                 style="background: linear-gradient(135deg, var(--primary-purple) 0%, var(--primary-green) 100%); width: 40px; height: 40px; font-weight: 800; font-size: 1.2rem;">
+                K
+            </div>
+            <div class="d-flex flex-column">
+                <span class="fw-bold text-dark lh-sm" style="font-size: 1.1rem; letter-spacing: -0.5px;">Kudumbashree</span>
+                <small class="text-primary-green fw-semibold" style="font-size: 0.75rem; letter-spacing: 0.5px;">GOVERNMENT OF KERALA</small>
+            </div>
+        </a>
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#landingNavbar" aria-controls="landingNavbar" aria-expanded="false" aria-label="Toggle navigation">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+        
+        <div class="collapse navbar-collapse" id="landingNavbar">
+            <ul class="navbar-nav mx-auto mb-2 mb-lg-0 gap-lg-3">
+                <li class="nav-item"><a class="nav-link fw-semibold text-dark" href="#features">Platform Features</a></li>
+                <li class="nav-item"><a class="nav-link fw-semibold text-dark" href="#statistics">System Impact</a></li>
+                <li class="nav-item"><a class="nav-link fw-semibold text-dark" href="#schemes">Welfare Schemes</a></li>
+                <li class="nav-item"><a class="nav-link fw-semibold text-dark" href="#events">Unit Events</a></li>
+            </ul>
+            <div class="d-flex gap-2">
+                <a href="{% url 'login' %}" class="btn btn-kudumbashree-outline-purple px-4">Sign In</a>
+                <a href="{% url 'register' %}" class="btn btn-kudumbashree-primary px-4">Enroll Now</a>
+            </div>
+        </div>
+    </div>
+</nav>
+
+<!-- Hero Section -->
+<header class="py-5 text-center text-lg-start" style="background: linear-gradient(135deg, rgba(156, 39, 143, 0.04) 0%, rgba(108, 179, 63, 0.04) 100%);">
+    <div class="container py-5">
+        <div class="row align-items-center g-5">
+            <div class="col-lg-7">
+               <div class="badge bg-light text-dark border border-light-subtle rounded-pill px-3 py-2 mb-3 fw-bold shadow-sm">
+    <i class="fas fa-digital-tachograph me-2"></i>
+    Empowering Ayalkootam Units
+</div>
+                <h1 class="display-4 fw-extrabold mb-3 text-dark leading-tight" style="font-size: 3rem; letter-spacing: -1px;">
+                    Kudumbashree <span class="text-primary-purple">Digital</span> Management System
+                </h1>
+                <p class="lead text-muted mb-4 fs-5" style="max-width: 600px;">
+                    Empowering Kudumbashree through digital transformation. A premium, modern, and simplified portal for local group bookkeeping, loans, and roster tracking.
+                </p>
+                <div class="d-flex flex-wrap gap-3 justify-content-center justify-content-lg-start">
+                    <a href="{% url 'login' %}" class="btn btn-kudumbashree-primary btn-lg px-4 shadow-sm"><i class="fas fa-sign-in-alt me-2"></i>Access Portal</a>
+                    <a href="{% url 'register' %}" class="btn btn-kudumbashree-secondary btn-lg px-4 shadow-sm"><i class="fas fa-user-plus me-2"></i>Member Registration</a>
+                </div>
+            </div>
+            <div class="col-lg-5 text-center">
+                <div class="card-kudumbashree p-4 border-0 bg-white" style="border-radius: 24px;">
+                    <div class="d-flex align-items-center justify-content-between mb-4 border-bottom pb-3">
+                        <span class="fw-bold text-dark"><i class="fas fa-chart-pie me-2 text-primary-purple"></i>Quick Highlights</span>
+                        <span class="badge bg-success-subtle text-success badge-kudumbashree">Active</span>
+                    </div>
+                    <div class="d-flex flex-column gap-3">
+                        <div class="d-flex align-items-center gap-3 p-3 bg-light rounded-3">
+                            <div class="stat-icon-wrapper stat-purple"><i class="fas fa-clipboard-check"></i></div>
+                            <div class="text-start">
+                                <h6 class="mb-0 fw-bold">Manual Attendance</h6>
+                                <small class="text-muted">Simplified rosters for rural units</small>
+                            </div>
+                        </div>
+                        <div class="d-flex align-items-center gap-3 p-3 bg-light rounded-3">
+                            <div class="stat-icon-wrapper stat-green"><i class="fas fa-hand-holding-usd"></i></div>
+                            <div class="text-start">
+                                <h6 class="mb-0 fw-bold">Livelihood Loans</h6>
+                                <small class="text-muted">4% rate credit tracking</small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</header>
+
+<!-- Statistics -->
+<section id="statistics" class="py-5 bg-white border-bottom">
+    <div class="container">
+        <div class="row g-4 text-center">
+            <div class="col-md-4">
+                <div class="p-3">
+                    <h2 class="display-5 fw-extrabold text-primary-purple mb-1">{{ total_groups }}</h2>
+                    <p class="text-muted mb-0 fw-semibold">Local Ayalkootam Units</p>
+                </div>
+            </div>
+            <div class="col-md-4 border-start border-end border-light">
+                <div class="p-3">
+                    <h2 class="display-5 fw-extrabold text-primary-green mb-1">{{ total_members }}</h2>
+                    <p class="text-muted mb-0 fw-semibold">Active Portal Members</p>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="p-3">
+                    <h2 class="display-5 fw-extrabold text-dark mb-1">{{ total_enterprises }}</h2>
+                    <p class="text-muted mb-0 fw-semibold">Cottage Industries</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Features Grid -->
+<section id="features" class="py-5 bg-light">
+    <div class="container py-4">
+        <div class="text-center mb-5">
+            <h2 class="fw-extrabold text-dark mb-2">Integrated Platform Modules</h2>
+            <p class="text-muted mx-auto" style="max-width: 600px;">Simplicity first. Built to power daily self-help operations seamlessly from desktop to mobile screens.</p>
+        </div>
+        <div class="row g-4">
+            <div class="col-md-4 col-sm-6">
+                <div class="card-kudumbashree p-4 border-0 h-100 bg-white">
+                    <div class="stat-icon-wrapper stat-purple mb-3"><i class="fas fa-calendar-check"></i></div>
+                    <h5 class="fw-bold text-dark">Roster Attendance</h5>
+                    <p class="text-muted small mb-0">Record manual present/absent sheets easily. Filter and export monthly percentages without complexity.</p>
+                </div>
+            </div>
+            <div class="col-md-4 col-sm-6">
+                <div class="card-kudumbashree p-4 border-0 h-100 bg-white">
+                    <div class="stat-icon-wrapper stat-green mb-3"><i class="fas fa-hand-holding-usd"></i></div>
+                    <h5 class="fw-bold text-dark">Loans Ledger</h5>
+                    <p class="text-muted small mb-0">Sanction credit applications. Tracks repayments, approval workflow and generates balance sheets.</p>
+                </div>
+            </div>
+            <div class="col-md-4 col-sm-6">
+                <div class="card-kudumbashree p-4 border-0 h-100 bg-white">
+                    <div class="stat-icon-wrapper stat-warning mb-3"><i class="fas fa-coins"></i></div>
+                    <h5 class="fw-bold text-dark">Chitty Funds</h5>
+                    <p class="text-muted small mb-0">Monitor monthly contributions, dividend payouts, and individual member savings accounts.</p>
+                </div>
+            </div>
+            <div class="col-md-4 col-sm-6">
+                <div class="card-kudumbashree p-4 border-0 h-100 bg-white">
+                    <div class="stat-icon-wrapper stat-purple mb-3"><i class="fas fa-store"></i></div>
+                    <h5 class="fw-bold text-dark">Micro Enterprises</h5>
+                    <p class="text-muted small mb-0">Register local units, track stock volumes, receive low stock alerts, and log sales reports.</p>
+                </div>
+            </div>
+            <div class="col-md-4 col-sm-6">
+                <div class="card-kudumbashree p-4 border-0 h-100 bg-white">
+                    <div class="stat-icon-wrapper stat-green mb-3"><i class="fas fa-gavel"></i></div>
+                    <h5 class="fw-bold text-dark">Grievance Safe</h5>
+                    <p class="text-muted small mb-0">Submit complaints and view resolution status updates directly from President or Secretary auditors.</p>
+                </div>
+            </div>
+            <div class="col-md-4 col-sm-6">
+                <div class="card-kudumbashree p-4 border-0 h-100 bg-white">
+                    <div class="stat-icon-wrapper stat-warning mb-3"><i class="fas fa-chart-line"></i></div>
+                    <h5 class="fw-bold text-dark">Reports Center</h5>
+                    <p class="text-muted small mb-0">Visual analysis graphs detailing growth charts, expense categories, and printable ledger summaries.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Active Welfare Schemes Section -->
+<section id="schemes" class="py-5 bg-white border-top">
+    <div class="container py-4">
+        <div class="text-center mb-5">
+            <h2 class="fw-extrabold text-dark mb-2">Government Welfare Schemes</h2>
+            <p class="text-muted">Apply directly through your dashboard to secure active financial and social aid benefits.</p>
+        </div>
+        <div class="row g-4">
+            {% for scheme in schemes %}
+                <div class="col-md-6">
+                    <div class="card-kudumbashree p-4 border-0 h-100 bg-light">
+                        <div class="d-flex justify-content-between align-items-start mb-3">
+                            <h5 class="fw-bold text-dark mb-0">{{ scheme.title }}</h5>
+                            <span class="badge bg-success badge-kudumbashree">Open</span>
+                        </div>
+                        <p class="text-muted small">{{ scheme.description }}</p>
+                        <div class="mt-auto border-top pt-3">
+                            <span class="text-muted small d-block mb-2"><strong>Eligibility:</strong> {{ scheme.eligibility_criteria|truncatechars:100 }}</span>
+                            <a href="{% url 'login' %}" class="text-primary-purple fw-bold text-decoration-none small">Login to apply <i class="fas fa-arrow-right ms-1"></i></a>
+                        </div>
+                    </div>
+                </div>
+            {% empty %}
+                <div class="col-12 text-center text-muted">
+                    <p>No active government schemes posted recently.</p>
+                </div>
+            {% endfor %}
+        </div>
+    </div>
+</section>
+
+<!-- Upcoming Events and Announcements -->
+<section id="events" class="py-5 bg-light border-top">
+    <div class="container py-4">
+        <div class="text-center mb-5">
+            <h2 class="fw-extrabold text-dark mb-2">News & Event Gallery</h2>
+            <p class="text-muted">Stay updated with regional Kudumbashree campaigns and training camps.</p>
+        </div>
+        <div class="row g-4 justify-content-center">
+            {% for event in events %}
+                <div class="col-lg-4 col-md-6">
+                    <div class="card-kudumbashree border-0 h-100 overflow-hidden bg-white">
+                        <div class="p-4">
+                            <div class="text-muted small mb-2"><i class="fas fa-calendar-alt me-1"></i>{{ event.date_time|date:"d M Y, h:i A" }}</div>
+                            <h5 class="fw-bold text-dark">{{ event.title }}</h5>
+                            <p class="text-muted small mb-3">{{ event.description|truncatechars:120 }}</p>
+                            <div class="d-flex align-items-center justify-content-between pt-3 border-top mt-auto">
+                                <span class="small text-muted"><i class="fas fa-map-marker-alt me-1"></i>{{ event.venue }}</span>
+                                {% if event.gallery_link %}
+                                    <a href="{{ event.gallery_link }}" target="_blank" class="text-primary-green fw-bold text-decoration-none small">View Gallery</a>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            {% empty %}
+                <div class="col-12 text-center text-muted">
+                    <p>No upcoming events or campaigns recorded yet.</p>
+                </div>
+            {% endfor %}
+        </div>
+    </div>
+</section>
+
+<!-- Footer override -->
+<footer class="footer-portal border-top py-4 bg-white mt-0">
+    <div class="container">
+        <div class="row align-items-center justify-content-between">
+            <div class="col-md-6 text-center text-md-start mb-2 mb-md-0">
+                <span class="text-muted small">
+                    &copy; 2026 Kudumbashree State Poverty Eradication Mission. Government of Kerala.
+                </span>
+            </div>
+            <div class="col-md-6 text-center text-md-end">
+                <ul class="list-inline mb-0" style="font-size: 0.8rem;">
+                    <li class="list-inline-item"><a href="https://www.kudumbashree.org" class="text-decoration-none text-primary-purple fw-semibold">Official Portal</a></li>
+                    <li class="list-inline-item text-muted">|</li>
+                    <li class="list-inline-item"><a href="#" class="text-decoration-none text-muted">Terms of Service</a></li>
+                    <li class="list-inline-item text-muted">|</li>
+                    <li class="list-inline-item"><a href="#" class="text-decoration-none text-muted">Citizen Charter</a></li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</footer>
+{% endblock %}

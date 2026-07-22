@@ -1,0 +1,159 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Finance Ledger - Kudumbashree Digital Management System{% endblock %}
+
+{% block content %}
+<!-- Header Banner -->
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card-kudumbashree border-0 bg-white p-4 d-flex justify-content-between align-items-center flex-wrap gap-3">
+            <div>
+                <h4 class="mb-1 fw-bold text-primary-purple"><i class="fas fa-file-invoice-dollar me-2"></i>Unit Ledger Bookkeeping</h4>
+                <p class="text-muted mb-0 small">Log daily financial entries, monitor balances, and audit income/expenses transaction logs.</p>
+            </div>
+            {% if profile.role == 'secretary' or profile.role == 'president' %}
+                <button class="btn btn-kudumbashree-primary shadow-sm" data-bs-toggle="modal" data-bs-target="#ledgerModal">
+                    <i class="fas fa-plus me-2"></i>Log Ledger Entry
+                </button>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<!-- Statistics Cards -->
+<div class="row g-4 mb-4">
+    <div class="col-md-4">
+        <div class="stat-card shadow-sm">
+            <div class="d-flex align-items-center justify-content-between mb-2">
+                <span class="text-muted small fw-semibold text-uppercase">Total Income Pool</span>
+                <div class="stat-icon-wrapper stat-green"><i class="fas fa-arrow-down"></i></div>
+            </div>
+            <h3 class="fw-bold mb-0 text-success">₹{{ income_total|floatformat:2 }}</h3>
+            <small class="text-muted">Recorded revenue logs</small>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="stat-card shadow-sm">
+            <div class="d-flex align-items-center justify-content-between mb-2">
+                <span class="text-muted small fw-semibold text-uppercase">Total Expenses Pool</span>
+                <div class="stat-icon-wrapper stat-danger"><i class="fas fa-arrow-up"></i></div>
+            </div>
+            <h3 class="fw-bold mb-0 text-danger">₹{{ expense_total|floatformat:2 }}</h3>
+            <small class="text-muted">Recorded operational costs</small>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="stat-card shadow-sm">
+            <div class="d-flex align-items-center justify-content-between mb-2">
+                <span class="text-muted small fw-semibold text-uppercase">Ledger Net Balance</span>
+                <div class="stat-icon-wrapper stat-purple"><i class="fas fa-piggy-bank"></i></div>
+            </div>
+            <h3 class="fw-bold mb-0 text-primary-purple">₹{{ balance|floatformat:2 }}</h3>
+            <small class="text-muted">Available in unit reserves</small>
+        </div>
+    </div>
+</div>
+
+<!-- Ledger Table Logs -->
+<div class="row">
+    <div class="col-12">
+        <div class="card-kudumbashree border-0 bg-white shadow-sm">
+            <div class="card-header-custom d-flex justify-content-between align-items-center flex-wrap gap-2">
+                <h5 class="mb-0 fw-bold"><i class="fas fa-history text-primary-purple me-2"></i>Ledger Transaction Books</h5>
+                <!-- Filter Search -->
+                <div class="d-flex gap-2 align-items-center d-print-none">
+                    <input type="text" class="form-control form-control-sm table-search-input" data-target-table="ledger-table" placeholder="Search ledger..." style="width: 150px;">
+                    <button onclick="window.print()" class="btn btn-sm btn-kudumbashree-outline-purple"><i class="fas fa-print"></i></button>
+                </div>
+            </div>
+            <div class="p-3">
+                <div class="table-responsive">
+                    <table class="table table-custom table-hover mb-0" id="ledger-table">
+                        <thead>
+                            <tr>
+                                <th class="sortable-header">Date</th>
+                                <th class="sortable-header">Transaction Category</th>
+                                <th class="sortable-header">Type</th>
+                                <th class="sortable-header">Ledger Amount</th>
+                                <th>Description / Memo</th>
+                                <th>Recorded By</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for tx in transactions %}
+                                <tr>
+                                    <td>{{ tx.date|date:"d M Y" }}</td>
+                                    <td><strong>{{ tx.category }}</strong></td>
+                                    <td>
+                                        {% if tx.transaction_type == 'income' %}
+                                            <span class="badge bg-success-subtle text-success badge-kudumbashree">Income</span>
+                                        {% else %}
+                                            <span class="badge bg-danger-subtle text-danger badge-kudumbashree">Expense</span>
+                                        {% endif %}
+                                    </td>
+                                    <td class="fw-bold" style="color: {% if tx.transaction_type == 'income' %}var(--success){% else %}var(--danger){% endif %};">
+                                        {% if tx.transaction_type == 'income' %}+{% else %}-{% endif %}₹{{ tx.amount|floatformat:2 }}
+                                    </td>
+                                    <td><span class="small text-muted">{{ tx.description|default:"-" }}</span></td>
+                                    <td>{{ tx.recorded_by.username }}</td>
+                                </tr>
+                            {% empty %}
+                                <tr class="empty-row">
+                                    <td colspan="6" class="text-center py-4 text-muted">No transactions registered in ledger books.</td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Ledger Create -->
+{% if profile.role == 'secretary' or profile.role == 'president' %}
+<div class="modal fade" id="ledgerModal" tabindex="-1" aria-labelledby="ledgerModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content card-kudumbashree border-0 bg-white">
+            <div class="modal-header border-bottom">
+                <h5 class="modal-title fw-bold" id="ledgerModalLabel"><i class="fas fa-file-invoice-dollar text-primary-purple me-2"></i>Log Ledger Entry</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form method="POST" action="{% url 'finance' %}">
+                {% csrf_token %}
+                <div class="modal-body p-4">
+                    <!-- Form fields -->
+                    <div class="mb-3">
+                        <label class="form-label">Ledger Entry Type</label>
+                        {{ form.transaction_type }}
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Category</label>
+                        {{ form.category }}
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Amount (₹)</label>
+                            {{ form.amount }}
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Transaction Date</label>
+                            {{ form.date }}
+                        </div>
+                    </div>
+                    <div class="mb-0">
+                        <label class="form-label">Memo Description</label>
+                        {{ form.description }}
+                    </div>
+                </div>
+                <div class="modal-footer border-top p-3">
+                    <button type="button" class="btn btn-light border rounded-pill" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-kudumbashree-primary">Log Entry</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endif %}
+{% endblock %}

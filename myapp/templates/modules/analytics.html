@@ -1,0 +1,175 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Reports & Analytics - Kudumbashree Digital Management System{% endblock %}
+
+{% block content %}
+<!-- Header Banner -->
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card-kudumbashree border-0 bg-white p-4 d-flex justify-content-between align-items-center flex-wrap gap-3">
+            <div>
+                <h4 class="mb-1 fw-bold text-primary-purple"><i class="fas fa-chart-line me-2"></i>Reports & Analytics</h4>
+                <p class="text-muted mb-0 small">Visual metrics, allocations graphs, credit statistics, and Grievance resolution progress reports.</p>
+            </div>
+            <button onclick="window.print()" class="btn btn-kudumbashree-primary shadow-sm">
+                <i class="fas fa-print me-2"></i>Print Analytics Report
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- Charts Grid -->
+<div class="row g-4 mb-4">
+    <!-- Chart 1: Income category -->
+    <div class="col-md-6">
+        <div class="card-kudumbashree border-0 bg-white shadow-sm h-100">
+            <div class="card-header-custom">
+                <h5 class="mb-0 fw-bold text-dark"><i class="fas fa-chart-pie text-primary-purple me-2"></i>Income Category Breakdown</h5>
+            </div>
+            <div class="p-4 d-flex justify-content-center align-items-center" style="height: 280px;">
+                <canvas id="incomePieChart" class="w-100 h-100"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <!-- Chart 2: Expenditure category -->
+    <div class="col-md-6">
+        <div class="card-kudumbashree border-0 bg-white shadow-sm h-100">
+            <div class="card-header-custom">
+                <h5 class="mb-0 fw-bold text-dark"><i class="fas fa-chart-pie text-primary-green me-2"></i>Operational Expenditure</h5>
+            </div>
+            <div class="p-4 d-flex justify-content-center align-items-center" style="height: 280px;">
+                <canvas id="expensePieChart" class="w-100 h-100"></canvas>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row g-4 mb-4">
+    <!-- Chart 3: Loan Status -->
+    <div class="col-md-6">
+        <div class="card-kudumbashree border-0 bg-white shadow-sm h-100">
+            <div class="card-header-custom">
+                <h5 class="mb-0 fw-bold text-dark"><i class="fas fa-chart-bar text-primary-purple me-2"></i>Credit Sanctions Progress</h5>
+            </div>
+            <div class="p-4 d-flex justify-content-center align-items-center" style="height: 280px;">
+                <canvas id="loansBarChart" class="w-100 h-100"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <!-- Chart 4: Grievance resolutions -->
+    <div class="col-md-6">
+        <div class="card-kudumbashree border-0 bg-white shadow-sm h-100">
+            <div class="card-header-custom">
+                <h5 class="mb-0 fw-bold text-dark"><i class="fas fa-clipboard-check text-primary-green me-2"></i>Grievances Resolution Progress</h5>
+            </div>
+            <div class="p-4 d-flex justify-content-center align-items-center" style="height: 280px;">
+                <canvas id="complaintsChart" class="w-100 h-100"></canvas>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Raw Aggregation Data logs -->
+<div class="row">
+    <div class="col-12">
+        <div class="card-kudumbashree border-0 bg-white shadow-sm">
+            <div class="card-header-custom">
+                <h5 class="mb-0 fw-bold"><i class="fas fa-table text-primary-purple me-2"></i>Ledger Summaries</h5>
+            </div>
+            <div class="p-3">
+                <div class="row g-4">
+                    <div class="col-md-6">
+                        <h6 class="fw-bold mb-2">Income Category Allocations</h6>
+                        <ul class="list-group list-group-flush rounded-3">
+                            {% for inc in income_by_category %}
+                                <li class="list-group-item d-flex justify-content-between align-items-center" style="background-color: var(--card-bg-color); color: var(--text-color); border-color: var(--border-color);">
+                                    <span>{{ inc.category }}</span>
+                                    <strong class="text-success">₹{{ inc.sum|floatformat:2 }}</strong>
+                                </li>
+                            {% empty %}
+                                <li class="list-group-item text-muted">No entries logged.</li>
+                            {% endfor %}
+                        </ul>
+                    </div>
+                    <div class="col-md-6">
+                        <h6 class="fw-bold mb-2">Expenditure Category Allocations</h6>
+                        <ul class="list-group list-group-flush rounded-3">
+                            {% for exp in expense_by_category %}
+                                <li class="list-group-item d-flex justify-content-between align-items-center" style="background-color: var(--card-bg-color); color: var(--text-color); border-color: var(--border-color);">
+                                    <span>{{ exp.category }}</span>
+                                    <strong class="text-danger">₹{{ exp.sum|floatformat:2 }}</strong>
+                                </li>
+                            {% empty %}
+                                <li class="list-group-item text-muted">No entries logged.</li>
+                            {% endfor %}
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.addEventListener("DOMContentLoaded", function () {
+        if (window.KudumbashreeCharts) {
+            // Income Chart
+            const incomeLabels = [];
+            const incomeData = [];
+            {% for inc in income_by_category %}
+                incomeLabels.push("{{ inc.category }}");
+                incomeData.push({{ inc.sum }});
+            {% endfor %}
+            if (incomeLabels.length === 0) {
+                incomeLabels.push("Mock Savings");
+                incomeData.push(3000);
+            }
+            window.KudumbashreeCharts.renderPieChart('incomePieChart', incomeLabels, incomeData, ['#9C278F', '#F3E5F5', '#6CB33F']);
+
+            // Expense Chart
+            const expenseLabels = [];
+            const expenseData = [];
+            {% for exp in expense_by_category %}
+                expenseLabels.push("{{ exp.category }}");
+                expenseData.push({{ exp.sum }});
+            {% endfor %}
+            if (expenseLabels.length === 0) {
+                expenseLabels.push("Mock Operational Costs");
+                expenseData.push(350);
+            }
+            window.KudumbashreeCharts.renderPieChart('expensePieChart', expenseLabels, expenseData, ['#E53935', '#FB8C00', '#F3E5F5']);
+
+            // Loans Status Chart
+            const loanLabels = [];
+            const loanData = [];
+            {% for l in loans_count %}
+                loanLabels.push("{{ l.status|capfirst }}");
+                loanData.push({{ l.count }});
+            {% endfor %}
+            if (loanLabels.length === 0) {
+                loanLabels.push("Approved", "Pending");
+                loanData.push(1, 1);
+            }
+            window.KudumbashreeCharts.renderBarChart('loansBarChart', loanLabels, loanData, 'Credit Applications Counts', '#9C278F');
+
+            // Complaints Chart
+            const compLabels = [];
+            const compData = [];
+            {% for c in complaints_count %}
+                compLabels.push("{{ c.status|capfirst }}");
+                compData.push({{ c.count }});
+            {% endfor %}
+            if (compLabels.length === 0) {
+                compLabels.push("Submitted", "Resolved");
+                compData.push(1, 0);
+            }
+            window.KudumbashreeCharts.renderPieChart('complaintsChart', compLabels, compData, ['#FB8C00', '#43A047', '#E53935']);
+        }
+    });
+</script>
+{% endblock %}
