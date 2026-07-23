@@ -260,9 +260,11 @@ def seed_mock_data():
 
 # ----------------- VIEWS IMPLEMENTATION -----------------
 
-# 1. Landing Page
 def landing_view(request):
-    seed_mock_data()  # Trigger data seeding automatically on first boot
+    try:
+        seed_mock_data()  # Trigger data seeding automatically on first boot
+    except Exception:
+        pass
     events = Event.objects.all().order_by('-date_time')[:3]
     schemes = WelfareScheme.objects.filter(active=True)[:3]
     context = {
