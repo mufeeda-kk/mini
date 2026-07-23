@@ -43,4 +43,6 @@ urlpatterns = [
     path('schemes/apply/<int:scheme_id>/', views.scheme_apply, name='scheme_apply'),
     path('documents/upload/', views.document_upload, name='document_upload'),
     path('chat/send/', views.chat_send, name='chat_send'),
+    path('schemes/action/<int:application_id>/<str:action>/', views.scheme_application_action, name='scheme_application_action'),
+    path('complaints/resolve-ajax/<int:complaint_id>/', views.complaint_resolve_ajax, name='complaint_resolve_ajax'),
 ]

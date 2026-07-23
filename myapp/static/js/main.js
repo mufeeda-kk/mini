@@ -167,22 +167,167 @@ document.addEventListener("DOMContentLoaded", function () {
                     chatMessageBoxes.insertAdjacentHTML("beforeend", bubble);
                     chatInput.value = "";
                     chatMessageBoxes.scrollTop = chatMessageBoxes.scrollHeight;
-                    
-                    // Simple simulated reply after 2 seconds
-                    setTimeout(() => {
-                        const reply = `
-                            <div class="d-flex flex-column chat-bubble received">
-                                <small class="fw-bold mb-1 text-primary-purple">Anitha (Member)</small>
-                                <div>Got it. Roster checklists and reports look correct.</div>
-                                <small class="text-end mt-1 text-muted" style="font-size: 0.7rem;">Just now</small>
-                            </div>
-                        `;
-                        chatMessageBoxes.insertAdjacentHTML("beforeend", reply);
-                        chatMessageBoxes.scrollTop = chatMessageBoxes.scrollHeight;
-                    }, 2000);
                 }
             });
         });
+    }
+
+    // 6.5. AJAX Workflow Action Handlers
+    const chatContainer = document.getElementById("chat-messages-box");
+    if (chatContainer) {
+        // Event delegation for Approve/Reject buttons
+        chatContainer.addEventListener("click", function(e) {
+            const btn = e.target.closest(".workflow-action-btn");
+            if (!btn) return;
+            
+            e.preventDefault();
+            const actionContainer = btn.closest(".action-buttons");
+            if (!actionContainer) return;
+            
+            const type = actionContainer.getAttribute("data-type");
+            const itemId = actionContainer.getAttribute("data-item-id");
+            const action = btn.getAttribute("data-action"); // "approve" or "reject"
+            
+            let url = "";
+            if (type === "loan") {
+                url = `/loans/action/${itemId}/${action}/?format=json`;
+            } else if (type === "scheme") {
+                url = `/schemes/action/${itemId}/${action}/?format=json`;
+            } else if (type === "member") {
+                url = `/dashboard/verify/${itemId}/${action}/?format=json`;
+            }
+            
+            if (!url) return;
+            
+            btn.disabled = true;
+            fetch(url, {
+                headers: {
+                    "X-Requested-With": "XMLHttpRequest",
+                    "X-CSRFToken": getCsrfToken()
+                }
+            })
+            .then(res => res.json())
+            .then(data => {
+                if (data.status === "success") {
+                    // Update status badge inside the card
+                    const card = btn.closest(".workflow-card");
+                    if (card) {
+                        const badgeContainer = card.querySelector(".status-badge-container");
+                        if (badgeContainer) {
+                            let badgeClass = "bg-success";
+                            let statusText = action.charAt(0).toUpperCase() + action.slice(1) + "d";
+                            if (action === "reject") {
+                                badgeClass = "bg-danger";
+                            }
+                            badgeContainer.innerHTML = `<span class="badge ${badgeClass} rounded-pill">${statusText}</span>`;
+                        }
+                    }
+                    // Hide action buttons
+                    actionContainer.remove();
+                    
+                    // Update sidebar item if it exists
+                    const sidebarItem = document.getElementById(`sidebar-${type}-${itemId}`);
+                    if (sidebarItem) {
+                        sidebarItem.remove();
+                        // Decrement count badge in sidebar
+                        const badgeCount = document.getElementById(`badge-count-${type}s`);
+                        if (badgeCount) {
+                            let count = parseInt(badgeCount.innerText) - 1;
+                            badgeCount.innerText = count >= 0 ? count : 0;
+                            if (count <= 0) {
+                                const list = document.getElementById(`sidebar-${type}s-list`);
+                                if (list) {
+                                    list.innerHTML = `<div class="text-center py-2 text-muted small bg-white rounded border border-dashed py-3">No active requests</div>`;
+                                }
+                            }
+                        }
+                    }
+                } else {
+                    btn.disabled = false;
+                    alert("Error: " + (data.message || "Action failed."));
+                }
+            })
+            .catch(err => {
+                btn.disabled = false;
+                console.error("Workflow AJAX error:", err);
+            });
+        });
+
+        // Event delegation for Complaint Resolution Forms
+        chatContainer.addEventListener("submit", function(e) {
+            const form = e.target.closest(".complaint-resolve-form-inline");
+            if (!form) return;
+            
+            e.preventDefault();
+            const actionContainer = form.closest(".action-buttons");
+            if (!actionContainer) return;
+            
+            const itemId = actionContainer.getAttribute("data-item-id");
+            const formData = new FormData(form);
+            
+            fetch(`/complaints/resolve-ajax/${itemId}/`, {
+                method: "POST",
+                body: formData,
+                headers: {
+                    "X-Requested-With": "XMLHttpRequest",
+                    "X-CSRFToken": getCsrfToken()
+                }
+            })
+            .then(res => res.json())
+            .then(data => {
+                if (data.status === "success") {
+                    // Update status badge
+                    const card = form.closest(".workflow-card");
+                    if (card) {
+                        const badgeContainer = card.querySelector(".status-badge-container");
+                        if (badgeContainer) {
+                            badgeContainer.innerHTML = `<span class="badge bg-success rounded-pill">Resolved</span>`;
+                        }
+                        
+                        // Show resolution text block
+                        const body = card.querySelector(".card-body");
+                        if (body) {
+                            const resDiv = document.createElement("div");
+                            resDiv.className = "mt-2 small bg-light p-2 rounded border-start border-3 border-success text-muted";
+                            resDiv.style.fontSize = "0.78rem";
+                            resDiv.innerHTML = `<strong><i class="fas fa-info-circle text-success me-1"></i>Resolution Response:</strong> <span class="resolution-text">${escapeHtml(data.reply_text)}</span>`;
+                            body.appendChild(resDiv);
+                        }
+                    }
+                    // Remove form
+                    actionContainer.remove();
+                    
+                    // Remove from sidebar
+                    const sidebarItem = document.getElementById(`sidebar-complaint-${itemId}`);
+                    if (sidebarItem) {
+                        sidebarItem.remove();
+                        // Decrement count
+                        const badgeCount = document.getElementById("badge-count-complaints");
+                        if (badgeCount) {
+                            let count = parseInt(badgeCount.innerText) - 1;
+                            badgeCount.innerText = count >= 0 ? count : 0;
+                            if (count <= 0) {
+                                const list = document.getElementById("sidebar-complaints-list");
+                                if (list) {
+                                    list.innerHTML = `<div class="text-center py-2 text-muted small bg-white rounded border border-dashed py-3">No active grievances</div>`;
+                                }
+                            }
+                        }
+                    }
+                } else {
+                    alert("Error: " + (data.message || "Failed to resolve complaint."));
+                }
+            })
+            .catch(err => {
+                console.error("Complaint resolution AJAX error:", err);
+            });
+        });
+    }
+
+    // Helper to get CSRF token
+    function getCsrfToken() {
+        const tokenInput = document.querySelector("[name=csrfmiddlewaretoken]");
+        return tokenInput ? tokenInput.value : "";
     }
 
     function escapeHtml(text) {

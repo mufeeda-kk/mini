@@ -225,6 +225,39 @@ def seed_mock_data():
     ChatMessage.objects.create(group=group, sender=pres_user, message="Welcome members to our official Sneha Ayalkootam digital space!")
     ChatMessage.objects.create(group=group, sender=mem1_user, message="Glad to join. It is very easy to use!")
 
+    # Seed pending loan workflow message
+    loan_obj = Loan.objects.filter(member=mem2_user, status='pending').first()
+    if loan_obj:
+        ChatMessage.objects.create(
+            group=group,
+            sender=mem2_user,
+            is_workflow=True,
+            loan=loan_obj,
+            message=f"Loan Request: I have requested a loan of ₹{loan_obj.amount} for '{loan_obj.purpose}'."
+        )
+
+    # Seed pending complaint workflow message
+    complaint_obj = Complaint.objects.filter(member=mem2_user, status='submitted').first()
+    if complaint_obj:
+        ChatMessage.objects.create(
+            group=group,
+            sender=mem2_user,
+            is_workflow=True,
+            complaint=complaint_obj,
+            message=f"Grievance Filed: I have submitted a complaint: '{complaint_obj.title}'."
+        )
+
+    # Seed pending user registration workflow message
+    profile_obj = UserProfile.objects.filter(user=mem_pend).first()
+    if profile_obj:
+        ChatMessage.objects.create(
+            group=group,
+            sender=mem_pend,
+            is_workflow=True,
+            member_profile=profile_obj,
+            message=f"New Registration Request: {mem_pend.username} has requested to join as Kudumbashree Member."
+        )
+
 # ----------------- VIEWS IMPLEMENTATION -----------------
 
 # 1. Landing Page
@@ -487,28 +520,43 @@ def verify_member_action(request, profile_id, action):
     # Permission barriers
     if profile.role == 'admin':
         if target_profile.role not in ['president', 'secretary']:
+            if request.headers.get('x-requested-with') == 'XMLHttpRequest' or request.GET.get('format') == 'json':
+                return JsonResponse({'status': 'error', 'message': 'Admins only verify Office Bearers.'}, status=403)
             messages.error(request, "Admins only verify Office Bearers (Presidents/Secretaries).")
             return HttpResponseRedirect(request.META.get('HTTP_REFERER', '/'))
     elif profile.role in ['president', 'secretary']:
         if target_profile.role != 'member':
+            if request.headers.get('x-requested-with') == 'XMLHttpRequest' or request.GET.get('format') == 'json':
+                return JsonResponse({'status': 'error', 'message': 'Office Bearers only verify members.'}, status=403)
             messages.error(request, "Office Bearers only verify Kudumbashree unit members.")
             return HttpResponseRedirect(request.META.get('HTTP_REFERER', '/'))
     else:
+        if request.headers.get('x-requested-with') == 'XMLHttpRequest' or request.GET.get('format') == 'json':
+            return JsonResponse({'status': 'error', 'message': 'Unauthorized action.'}, status=403)
         messages.error(request, "Unauthorized action.")
         return redirect('role_selection')
 
     # Update states
     if action == 'approve':
         target_profile.status = 'approved'
-        messages.success(request, f"Approved and activated account for {target_profile.user.username}.")
+        msg_str = f"Approved and activated account for {target_profile.user.username}."
+        messages.success(request, msg_str)
     elif action == 'reject':
         target_profile.status = 'rejected'
-        messages.warning(request, f"Rejected registration for {target_profile.user.username}.")
+        msg_str = f"Rejected registration for {target_profile.user.username}."
+        messages.warning(request, msg_str)
     elif action == 'suspend':
         target_profile.status = 'suspended'
-        messages.warning(request, f"Suspended account for {target_profile.user.username}.")
+        msg_str = f"Suspended account for {target_profile.user.username}."
+        messages.warning(request, msg_str)
+    else:
+        msg_str = "Unknown action."
     
     target_profile.save()
+
+    if request.headers.get('x-requested-with') == 'XMLHttpRequest' or request.GET.get('format') == 'json':
+        return JsonResponse({'status': 'success', 'message': msg_str})
+
     return HttpResponseRedirect(request.META.get('HTTP_REFERER', '/'))
 
 # 15. Attendance View (Redesigned with Manual checksheets and aggregates)
@@ -723,12 +771,22 @@ def group_chat_view(request):
         messages.warning(request, "You must be associated with a Kudumbashree unit to access chat.")
         return redirect('role_selection')
 
-    chats = ChatMessage.objects.filter(group=group).select_related('sender').order_by('timestamp')
+    chats = ChatMessage.objects.filter(group=group).select_related('sender', 'loan', 'complaint', 'scheme_application', 'member_profile').order_by('timestamp')
+
+    # Fetch pending workflow items for the group workflows sidebar
+    pending_loans = Loan.objects.filter(member__profile__group=group, status='pending').select_related('member')
+    pending_complaints = Complaint.objects.filter(member__profile__group=group, status__in=['submitted', 'in_progress']).select_related('member')
+    pending_schemes = SchemeApplication.objects.filter(member__profile__group=group, status__in=['applied', 'under_review']).select_related('member', 'scheme')
+    pending_members = UserProfile.objects.filter(group=group, status='pending').select_related('user')
 
     context = {
         'profile': profile,
         'group': group,
-        'chats': chats
+        'chats': chats,
+        'pending_loans': pending_loans,
+        'pending_complaints': pending_complaints,
+        'pending_schemes': pending_schemes,
+        'pending_members': pending_members,
     }
     return render(request, 'modules/group_chat.html', context)
 
@@ -760,6 +818,8 @@ def loan_action(request, loan_id, action):
 
     # President / Secretary approves loans
     if profile.role not in ['president', 'secretary', 'admin']:
+        if request.headers.get('x-requested-with') == 'XMLHttpRequest' or request.GET.get('format') == 'json':
+            return JsonResponse({'status': 'error', 'message': 'Unauthorized action.'}, status=403)
         messages.error(request, "Unauthorized action.")
         return redirect('role_selection')
 
@@ -776,11 +836,18 @@ def loan_action(request, loan_id, action):
             description=f"Disbursed loan id #{loan.id} to {loan.member.username}",
             recorded_by=request.user
         )
-        messages.success(request, f"Loan of ₹{loan.amount} for {loan.member.username} approved.")
+        msg_str = f"Loan of ₹{loan.amount} for {loan.member.username} approved."
+        messages.success(request, msg_str)
     elif action == 'reject':
         loan.status = 'rejected'
         loan.save()
-        messages.info(request, "Loan request rejected.")
+        msg_str = "Loan request rejected."
+        messages.info(request, msg_str)
+    else:
+        msg_str = "Unknown action."
+
+    if request.headers.get('x-requested-with') == 'XMLHttpRequest' or request.GET.get('format') == 'json':
+        return JsonResponse({'status': 'success', 'message': msg_str})
 
     return HttpResponseRedirect(request.META.get('HTTP_REFERER', '/'))
 
@@ -793,6 +860,18 @@ def loan_apply(request):
             loan.member = request.user
             loan.status = 'pending'
             loan.save()
+            
+            # Post workflow chat message
+            profile = get_object_or_404(UserProfile, user=request.user)
+            if profile.group:
+                ChatMessage.objects.create(
+                    group=profile.group,
+                    sender=request.user,
+                    is_workflow=True,
+                    loan=loan,
+                    message=f"Loan Request: I have requested a loan of ₹{loan.amount} for '{loan.purpose}'."
+                )
+                
             messages.success(request, "Loan application submitted successfully.")
         else:
             messages.error(request, "Error in loan application fields.")
@@ -850,6 +929,18 @@ def complaint_submit(request):
             complaint.member = request.user
             complaint.status = 'submitted'
             complaint.save()
+            
+            # Post workflow chat message
+            profile = get_object_or_404(UserProfile, user=request.user)
+            if profile.group:
+                ChatMessage.objects.create(
+                    group=profile.group,
+                    sender=request.user,
+                    is_workflow=True,
+                    complaint=complaint,
+                    message=f"Grievance Filed: I have submitted a complaint: '{complaint.title}'."
+                )
+                
             messages.success(request, "Your grievance has been filed successfully.")
     return redirect('complaints')
 
@@ -876,11 +967,23 @@ def scheme_apply(request, scheme_id):
     if request.method == 'POST':
         exists = SchemeApplication.objects.filter(scheme=scheme, member=request.user).exists()
         if not exists:
-            SchemeApplication.objects.create(
+            app = SchemeApplication.objects.create(
                 scheme=scheme,
                 member=request.user,
                 status='applied'
             )
+            
+            # Post workflow chat message
+            profile = get_object_or_404(UserProfile, user=request.user)
+            if profile.group:
+                ChatMessage.objects.create(
+                    group=profile.group,
+                    sender=request.user,
+                    is_workflow=True,
+                    scheme_application=app,
+                    message=f"Welfare Scheme Application: I have applied for the scheme '{scheme.title}'."
+                )
+                
             messages.success(request, f"Applied for {scheme.title} successfully.")
         else:
             messages.warning(request, "You have already applied for this scheme.")
@@ -919,3 +1022,59 @@ def chat_send(request):
             )
             return JsonResponse({'status': 'success'})
     return JsonResponse({'status': 'error'})
+
+@login_required
+def scheme_application_action(request, application_id, action):
+    profile = get_object_or_404(UserProfile, user=request.user)
+    app = get_object_or_404(SchemeApplication, id=application_id)
+    
+    # Only presidents, secretaries, or admins can approve scheme applications for their group
+    if profile.role not in ['president', 'secretary', 'admin']:
+        if request.headers.get('x-requested-with') == 'XMLHttpRequest' or request.GET.get('format') == 'json':
+            return JsonResponse({'status': 'error', 'message': 'Unauthorized action.'}, status=403)
+        messages.error(request, "Unauthorized action.")
+        return redirect('role_selection')
+        
+    if action == 'approve':
+        app.status = 'approved'
+        app.save()
+        msg_str = f"Approved application for {app.scheme.title} by {app.member.username}."
+        messages.success(request, msg_str)
+    elif action == 'reject':
+        app.status = 'rejected'
+        app.save()
+        msg_str = f"Rejected application for {app.scheme.title} by {app.member.username}."
+        messages.info(request, msg_str)
+    else:
+        msg_str = "Unknown action."
+        
+    if request.headers.get('x-requested-with') == 'XMLHttpRequest' or request.GET.get('format') == 'json':
+        return JsonResponse({'status': 'success', 'message': msg_str})
+        
+    return HttpResponseRedirect(request.META.get('HTTP_REFERER', '/'))
+
+@login_required
+def complaint_resolve_ajax(request, complaint_id):
+    profile = get_object_or_404(UserProfile, user=request.user)
+    complaint = get_object_or_404(Complaint, id=complaint_id)
+    
+    if profile.role not in ['president', 'secretary', 'admin']:
+        return JsonResponse({'status': 'error', 'message': 'Unauthorized'}, status=403)
+        
+    if request.method == 'POST':
+        reply_text = request.POST.get('reply_text', '')
+        if profile.role in ['president', 'secretary']:
+            complaint.secretary_response = reply_text
+            complaint.status = 'resolved'
+        elif profile.role == 'admin':
+            complaint.admin_response = reply_text
+            complaint.status = 'resolved'
+        complaint.save()
+        
+        return JsonResponse({
+            'status': 'success', 
+            'message': 'Grievance resolved successfully.',
+            'reply_text': reply_text
+        })
+        
+    return JsonResponse({'status': 'error', 'message': 'Invalid request method'}, status=400)

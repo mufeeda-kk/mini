@@ -265,6 +265,13 @@ class ChatMessage(models.Model):
     message = models.TextField(blank=True, null=True)
     media_file = models.FileField(upload_to='chat_media/', blank=True, null=True)
     timestamp = models.DateTimeField(auto_now_add=True)
+    
+    # Workflow integration fields
+    is_workflow = models.BooleanField(default=False)
+    loan = models.ForeignKey('Loan', on_delete=models.SET_NULL, null=True, blank=True, related_name='chat_messages')
+    complaint = models.ForeignKey('Complaint', on_delete=models.SET_NULL, null=True, blank=True, related_name='chat_messages')
+    scheme_application = models.ForeignKey('SchemeApplication', on_delete=models.SET_NULL, null=True, blank=True, related_name='chat_messages')
+    member_profile = models.ForeignKey('UserProfile', on_delete=models.SET_NULL, null=True, blank=True, related_name='chat_messages')
 
     def __str__(self):
         return f"{self.sender.username} at {self.timestamp}: {self.message[:30]}"

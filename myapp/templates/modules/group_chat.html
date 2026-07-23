@@ -9,43 +9,163 @@
     <div class="col-12">
         <div class="card-kudumbashree border-0 bg-white p-4">
             <h4 class="mb-1 fw-bold text-primary-purple"><i class="fas fa-comments me-2"></i>Ayalkootam Group Chat</h4>
-            <p class="text-muted mb-0 small">Communicate with your Kudumbashree unit members, discuss agenda items, and share local announcements.</p>
+            <p class="text-muted mb-0 small">Communicate with your Kudumbashree unit members, discuss agenda items, and manage workflow approvals in real-time.</p>
         </div>
     </div>
 </div>
 
-<!-- Main Chat Interface -->
+<!-- Main Interactive Interface -->
 <div class="row">
-    <div class="col-12">
-        <div class="card-kudumbashree border-0 bg-white shadow-sm overflow-hidden" style="height: 520px; display: flex; flex-direction: column;">
+    <!-- Chat Column (Left) -->
+    <div class="col-lg-8 col-12 mb-4">
+        <div class="card-kudumbashree border-0 bg-white shadow-sm overflow-hidden" style="height: 580px; display: flex; flex-direction: column;">
             
             <!-- Chat Header -->
-            <div class="card-header-custom py-3">
+            <div class="card-header-custom py-3 border-bottom bg-white d-flex align-items-center justify-content-between px-4">
                 <div class="d-flex align-items-center gap-2">
-                    <div class="rounded-circle bg-success text-white d-flex align-items-center justify-content-center" style="width: 10px; height: 10px;"></div>
+                    <div class="rounded-circle bg-success text-white d-flex align-items-center justify-content-center animate-pulse" style="width: 10px; height: 10px;"></div>
                     <h6 class="mb-0 fw-bold text-dark">{{ group.name }} Chatroom</h6>
                 </div>
-                <small class="text-muted small">Active discussions</small>
+                <small class="text-muted">{{ group.ward }} | {{ group.panchayath }}</small>
             </div>
 
             <!-- Messages Stream Area -->
             <div class="p-4" id="chat-messages-box" style="flex: 1; overflow-y: auto; background-color: var(--light-neutral); display: flex; flex-direction: column; gap: 1rem;">
                 {% for msg in chats %}
-                    {% if msg.sender == request.user %}
-                        <div class="d-flex flex-column chat-bubble sent align-self-end text-white p-3 rounded-3" style="background: linear-gradient(135deg, var(--primary-purple) 0%, #7D1F72 100%); max-width: 75%; min-width: 150px;">
-                            <small class="fw-bold mb-1 text-white-50">You</small>
-                            <div>{{ msg.message }}</div>
-                            <small class="text-end mt-1 text-white-50" style="font-size: 0.7rem;">{{ msg.timestamp|date:"h:i A" }}</small>
+                    {% if msg.is_workflow %}
+                        <!-- Workflow Card -->
+                        <div class="card border-start border-4 shadow-sm w-100 mx-auto workflow-card bg-white" 
+                             style="border-left-color: var(--primary-purple) !important; max-width: 90%; border-radius: 8px;"
+                             id="chat-msg-{{ msg.id }}">
+                            <div class="card-body p-3">
+                                <div class="d-flex align-items-center justify-content-between mb-2">
+                                    <div class="d-flex align-items-center text-primary-purple fw-bold small">
+                                        {% if msg.loan %}
+                                            <i class="fas fa-hand-holding-usd me-2 text-warning fs-5"></i>LOAN APPLICATION WORKFLOW
+                                        {% elif msg.complaint %}
+                                            <i class="fas fa-exclamation-triangle me-2 text-danger fs-5"></i>COMPLAINT / GRIEVANCE
+                                        {% elif msg.scheme_application %}
+                                            <i class="fas fa-file-invoice-dollar me-2 text-info fs-5"></i>WELFARE SCHEME
+                                        {% elif msg.member_profile %}
+                                            <i class="fas fa-user-plus me-2 text-success fs-5"></i>MEMBER REGISTRATION
+                                        {% endif %}
+                                    </div>
+                                    <div class="status-badge-container">
+                                        {% if msg.loan %}
+                                            {% if msg.loan.status == 'pending' %}
+                                                <span class="badge bg-warning text-dark rounded-pill">Pending Approval</span>
+                                            {% elif msg.loan.status == 'approved' %}
+                                                <span class="badge bg-success rounded-pill">Approved & Disbursed</span>
+                                            {% elif msg.loan.status == 'rejected' %}
+                                                <span class="badge bg-danger rounded-pill">Rejected</span>
+                                            {% elif msg.loan.status == 'repaid' %}
+                                                <span class="badge bg-info rounded-pill">Repaid</span>
+                                            {% endif %}
+                                        {% elif msg.complaint %}
+                                            {% if msg.complaint.status == 'submitted' %}
+                                                <span class="badge bg-danger rounded-pill">Active Grievance</span>
+                                            {% elif msg.complaint.status == 'in_progress' %}
+                                                <span class="badge bg-warning text-dark rounded-pill">Under Review</span>
+                                            {% elif msg.complaint.status == 'resolved' %}
+                                                <span class="badge bg-success rounded-pill">Resolved</span>
+                                            {% endif %}
+                                        {% elif msg.scheme_application %}
+                                            {% if msg.scheme_application.status == 'applied' %}
+                                                <span class="badge bg-warning text-dark rounded-pill">Applied</span>
+                                            {% elif msg.scheme_application.status == 'under_review' %}
+                                                <span class="badge bg-info rounded-pill">Under Review</span>
+                                            {% elif msg.scheme_application.status == 'approved' %}
+                                                <span class="badge bg-success rounded-pill">Approved</span>
+                                            {% elif msg.scheme_application.status == 'rejected' %}
+                                                <span class="badge bg-danger rounded-pill">Rejected</span>
+                                            {% endif %}
+                                        {% elif msg.member_profile %}
+                                            {% if msg.member_profile.status == 'pending' %}
+                                                <span class="badge bg-warning text-dark rounded-pill">Pending Verification</span>
+                                            {% elif msg.member_profile.status == 'approved' %}
+                                                <span class="badge bg-success rounded-pill">Approved & Active</span>
+                                            {% elif msg.member_profile.status == 'rejected' %}
+                                                <span class="badge bg-danger rounded-pill">Rejected</span>
+                                            {% elif msg.member_profile.status == 'suspended' %}
+                                                <span class="badge bg-secondary rounded-pill">Suspended</span>
+                                            {% endif %}
+                                        {% endif %}
+                                    </div>
+                                </div>
+                                
+                                <p class="mb-2 text-dark small">{{ msg.message }}</p>
+                                
+                                <div class="d-flex align-items-center justify-content-between pt-2 border-top">
+                                    <span class="text-muted small" style="font-size: 0.75rem;">
+                                        Initiated by <strong>{{ msg.sender.username|capfirst }}</strong> | {{ msg.timestamp|date:"M d, h:i A" }}
+                                    </span>
+                                    
+                                    <!-- Administrative quick actions inside Chat Stream -->
+                                    <div class="actions-section">
+                                        {% if profile.role in 'president, secretary, admin' %}
+                                            {% if msg.loan and msg.loan.status == 'pending' %}
+                                                <div class="d-flex gap-1 action-buttons" data-type="loan" data-item-id="{{ msg.loan.id }}">
+                                                    <button class="btn btn-sm btn-success py-1 px-2 workflow-action-btn" data-action="approve" style="font-size: 0.75rem;"><i class="fas fa-check me-1"></i>Approve</button>
+                                                    <button class="btn btn-sm btn-danger py-1 px-2 workflow-action-btn" data-action="reject" style="font-size: 0.75rem;"><i class="fas fa-times me-1"></i>Reject</button>
+                                                </div>
+                                            {% elif msg.scheme_application and msg.scheme_application.status == 'applied' or msg.scheme_application.status == 'under_review' %}
+                                                <div class="d-flex gap-1 action-buttons" data-type="scheme" data-item-id="{{ msg.scheme_application.id }}">
+                                                    <button class="btn btn-sm btn-success py-1 px-2 workflow-action-btn" data-action="approve" style="font-size: 0.75rem;"><i class="fas fa-check me-1"></i>Approve</button>
+                                                    <button class="btn btn-sm btn-danger py-1 px-2 workflow-action-btn" data-action="reject" style="font-size: 0.75rem;"><i class="fas fa-times me-1"></i>Reject</button>
+                                                </div>
+                                            {% elif msg.member_profile and msg.member_profile.status == 'pending' %}
+                                                <div class="d-flex gap-1 action-buttons" data-type="member" data-item-id="{{ msg.member_profile.id }}">
+                                                    <button class="btn btn-sm btn-success py-1 px-2 workflow-action-btn" data-action="approve" style="font-size: 0.75rem;"><i class="fas fa-user-check me-1"></i>Approve</button>
+                                                    <button class="btn btn-sm btn-danger py-1 px-2 workflow-action-btn" data-action="reject" style="font-size: 0.75rem;"><i class="fas fa-user-times me-1"></i>Reject</button>
+                                                </div>
+                                            {% elif msg.complaint and msg.complaint.status != 'resolved' %}
+                                                <div class="action-buttons w-100" data-type="complaint" data-item-id="{{ msg.complaint.id }}">
+                                                    <form class="complaint-resolve-form-inline d-flex gap-1 mt-2">
+                                                        {% csrf_token %}
+                                                        <input type="text" name="reply_text" class="form-control form-control-sm py-1 border" placeholder="Type resolution message..." required style="font-size: 0.75rem;">
+                                                        <button type="submit" class="btn btn-sm btn-success py-1 px-2" style="font-size: 0.75rem; white-space: nowrap;"><i class="fas fa-check me-1"></i>Resolve</button>
+                                                    </form>
+                                                </div>
+                                            {% endif %}
+                                        {% endif %}
+                                    </div>
+                                </div>
+
+                                <!-- Display resolution details if complaint is resolved -->
+                                {% if msg.complaint and msg.complaint.status == 'resolved' %}
+                                    <div class="mt-2 small bg-light p-2 rounded border-start border-3 border-success text-muted" style="font-size: 0.78rem;">
+                                        <strong><i class="fas fa-info-circle text-success me-1"></i>Resolution Response:</strong> 
+                                        <span class="resolution-text">
+                                            {% if msg.complaint.secretary_response %}
+                                                {{ msg.complaint.secretary_response }}
+                                            {% elif msg.complaint.admin_response %}
+                                                {{ msg.complaint.admin_response }}
+                                            {% else %}
+                                                Addressed by administration.
+                                            {% endif %}
+                                        </span>
+                                    </div>
+                                {% endif %}
+                            </div>
                         </div>
                     {% else %}
-                        <div class="d-flex flex-column chat-bubble received align-self-start bg-white text-dark p-3 rounded-3 border" style="max-width: 75%; min-width: 150px;">
-                            <small class="fw-bold mb-1 text-primary-purple">{{ msg.sender.username|capfirst }}</small>
-                            <div>{{ msg.message }}</div>
-                            <small class="text-end mt-1 text-muted" style="font-size: 0.7rem;">{{ msg.timestamp|date:"h:i A" }}</small>
-                        </div>
+                        <!-- Regular Message -->
+                        {% if msg.sender == request.user %}
+                            <div class="d-flex flex-column chat-bubble sent align-self-end text-white p-3 rounded-3" style="background: linear-gradient(135deg, var(--primary-purple) 0%, #7D1F72 100%); max-width: 75%; min-width: 150px;">
+                                <small class="fw-bold mb-1 text-white-50">You</small>
+                                <div>{{ msg.message }}</div>
+                                <small class="text-end mt-1 text-white-50" style="font-size: 0.7rem;">{{ msg.timestamp|date:"h:i A" }}</small>
+                            </div>
+                        {% else %}
+                            <div class="d-flex flex-column chat-bubble received align-self-start bg-white text-dark p-3 rounded-3 border" style="max-width: 75%; min-width: 150px;">
+                                <small class="fw-bold mb-1 text-primary-purple">{{ msg.sender.username|capfirst }}</small>
+                                <div>{{ msg.message }}</div>
+                                <small class="text-end mt-1 text-muted" style="font-size: 0.7rem;">{{ msg.timestamp|date:"h:i A" }}</small>
+                            </div>
+                        {% endif %}
                     {% endif %}
                 {% empty %}
-                    <div class="text-center py-5 text-muted my-auto">
+                    <div class="text-center py-5 text-muted my-auto" id="no-messages-prompt">
                         <i class="fas fa-comments fs-1 mb-3 text-light"></i>
                         <p class="mb-0">Welcome to your unit chatroom! Start the conversation below.</p>
                     </div>
@@ -72,5 +192,143 @@
 
         </div>
     </div>
+
+    <!-- Workflows Sidebar Column (Right) -->
+    <div class="col-lg-4 col-12 mb-4">
+        <div class="card-kudumbashree border-0 bg-white shadow-sm" style="height: 580px; display: flex; flex-direction: column;">
+            <div class="p-3 border-bottom d-flex align-items-center justify-content-between bg-white">
+                <h6 class="mb-0 fw-bold text-primary-purple"><i class="fas fa-tasks me-2"></i>Ayalkootam Workflows</h6>
+                <span class="badge bg-purple-light text-primary-purple" id="total-workflows-badge">Active</span>
+            </div>
+            
+            <div class="p-3 overflow-y-auto" style="flex: 1; background-color: var(--light-neutral); display: flex; flex-direction: column; gap: 1rem;">
+                
+                <!-- Pending Member Verifications -->
+                <div class="workflow-group-panel">
+                    <div class="d-flex align-items-center justify-content-between mb-2 pb-1 border-bottom">
+                        <small class="fw-bold text-uppercase text-muted" style="font-size: 0.75rem;"><i class="fas fa-users-cog me-1 text-success"></i>Member Verifications</small>
+                        <span class="badge bg-light text-dark rounded-pill" id="badge-count-members">{{ pending_members|length }}</span>
+                    </div>
+                    <div class="d-flex flex-column gap-2" id="sidebar-members-list">
+                        {% for member in pending_members %}
+                            <div class="bg-white p-2 rounded shadow-sm border-start border-success border-3 sidebar-workflow-item" id="sidebar-member-{{ member.id }}">
+                                <div class="d-flex align-items-center justify-content-between mb-1">
+                                    <strong class="text-dark small">{{ member.user.username|capfirst }}</strong>
+                                    <span class="badge bg-warning text-dark" style="font-size: 0.65rem;">Pending</span>
+                                </div>
+                                <div class="text-muted" style="font-size: 0.75rem;">Role: {{ member.get_role_display }}</div>
+                                <div class="text-muted" style="font-size: 0.75rem;">Phone: {{ member.phone }}</div>
+                                <a href="{% url 'approval_dashboard' %}" class="btn btn-xs btn-outline-purple w-100 py-1 mt-2 text-center" style="font-size: 0.7rem;"><i class="fas fa-external-link-alt me-1"></i>Verify Dashboard</a>
+                            </div>
+                        {% empty %}
+                            <div class="text-center py-2 text-muted small bg-white rounded border border-dashed py-3" id="no-members-msg">No pending verifications</div>
+                        {% endfor %}
+                    </div>
+                </div>
+
+                <!-- Pending Loan Approvals -->
+                <div class="workflow-group-panel">
+                    <div class="d-flex align-items-center justify-content-between mb-2 pb-1 border-bottom">
+                        <small class="fw-bold text-uppercase text-muted" style="font-size: 0.75rem;"><i class="fas fa-hand-holding-usd me-1 text-warning"></i>Loan Requests</small>
+                        <span class="badge bg-light text-dark rounded-pill" id="badge-count-loans">{{ pending_loans|length }}</span>
+                    </div>
+                    <div class="d-flex flex-column gap-2" id="sidebar-loans-list">
+                        {% for loan in pending_loans %}
+                            <div class="bg-white p-2 rounded shadow-sm border-start border-warning border-3 sidebar-workflow-item" id="sidebar-loan-{{ loan.id }}">
+                                <div class="d-flex align-items-center justify-content-between mb-1">
+                                    <strong class="text-dark small">₹{{ loan.amount }}</strong>
+                                    <span class="badge bg-warning text-dark" style="font-size: 0.65rem;">Pending</span>
+                                </div>
+                                <div class="text-muted text-truncate" style="font-size: 0.75rem;" title="{{ loan.purpose }}">Purpose: {{ loan.purpose }}</div>
+                                <div class="text-muted" style="font-size: 0.75rem;">By: {{ loan.member.username|capfirst }}</div>
+                                <a href="{% url 'loans' %}" class="btn btn-xs btn-outline-purple w-100 py-1 mt-2 text-center" style="font-size: 0.7rem;"><i class="fas fa-external-link-alt me-1"></i>View Details</a>
+                            </div>
+                        {% empty %}
+                            <div class="text-center py-2 text-muted small bg-white rounded border border-dashed py-3" id="no-loans-msg">No active loan requests</div>
+                        {% endfor %}
+                    </div>
+                </div>
+
+                <!-- Pending Welfare Scheme Applications -->
+                <div class="workflow-group-panel">
+                    <div class="d-flex align-items-center justify-content-between mb-2 pb-1 border-bottom">
+                        <small class="fw-bold text-uppercase text-muted" style="font-size: 0.75rem;"><i class="fas fa-file-invoice-dollar me-1 text-info"></i>Scheme Applications</small>
+                        <span class="badge bg-light text-dark rounded-pill" id="badge-count-schemes">{{ pending_schemes|length }}</span>
+                    </div>
+                    <div class="d-flex flex-column gap-2" id="sidebar-schemes-list">
+                        {% for app in pending_schemes %}
+                            <div class="bg-white p-2 rounded shadow-sm border-start border-info border-3 sidebar-workflow-item" id="sidebar-scheme-{{ app.id }}">
+                                <div class="d-flex align-items-center justify-content-between mb-1">
+                                    <strong class="text-dark small text-truncate" style="max-width: 140px;" title="{{ app.scheme.title }}">{{ app.scheme.title }}</strong>
+                                    <span class="badge bg-info text-white" style="font-size: 0.65rem;">{{ app.status|capfirst }}</span>
+                                </div>
+                                <div class="text-muted" style="font-size: 0.75rem;">By: {{ app.member.username|capfirst }}</div>
+                                <a href="{% url 'schemes' %}" class="btn btn-xs btn-outline-purple w-100 py-1 mt-2 text-center" style="font-size: 0.7rem;"><i class="fas fa-external-link-alt me-1"></i>View Details</a>
+                            </div>
+                        {% empty %}
+                            <div class="text-center py-2 text-muted small bg-white rounded border border-dashed py-3" id="no-schemes-msg">No pending applications</div>
+                        {% endfor %}
+                    </div>
+                </div>
+
+                <!-- Active Grievances -->
+                <div class="workflow-group-panel">
+                    <div class="d-flex align-items-center justify-content-between mb-2 pb-1 border-bottom">
+                        <small class="fw-bold text-uppercase text-muted" style="font-size: 0.75rem;"><i class="fas fa-exclamation-triangle me-1 text-danger"></i>Active Grievances</small>
+                        <span class="badge bg-light text-dark rounded-pill" id="badge-count-complaints">{{ pending_complaints|length }}</span>
+                    </div>
+                    <div class="d-flex flex-column gap-2" id="sidebar-complaints-list">
+                        {% for complaint in pending_complaints %}
+                            <div class="bg-white p-2 rounded shadow-sm border-start border-danger border-3 sidebar-workflow-item" id="sidebar-complaint-{{ complaint.id }}">
+                                <div class="d-flex align-items-center justify-content-between mb-1">
+                                    <strong class="text-dark small text-truncate" style="max-width: 140px;" title="{{ complaint.title }}">{{ complaint.title }}</strong>
+                                    <span class="badge bg-danger text-white" style="font-size: 0.65rem;">{{ complaint.status|capfirst }}</span>
+                                </div>
+                                <div class="text-muted" style="font-size: 0.75rem;">By: {{ complaint.member.username|capfirst }}</div>
+                                <a href="{% url 'complaints' %}" class="btn btn-xs btn-outline-purple w-100 py-1 mt-2 text-center" style="font-size: 0.7rem;"><i class="fas fa-external-link-alt me-1"></i>View Details</a>
+                            </div>
+                        {% empty %}
+                            <div class="text-center py-2 text-muted small bg-white rounded border border-dashed py-3" id="no-complaints-msg">No active grievances</div>
+                        {% endfor %}
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </div>
 </div>
+
+<!-- Custom Keyframes for pulsate animation -->
+<style>
+.animate-pulse {
+    animation: pulse 2s infinite;
+}
+@keyframes pulse {
+    0% {
+        transform: scale(0.95);
+        box-shadow: 0 0 0 0 rgba(40, 167, 69, 0.7);
+    }
+    70% {
+        transform: scale(1);
+        box-shadow: 0 0 0 6px rgba(40, 167, 69, 0);
+    }
+    100% {
+        transform: scale(0.95);
+        box-shadow: 0 0 0 0 rgba(40, 167, 69, 0);
+    }
+}
+.sidebar-workflow-item {
+    transition: all 0.25s ease;
+}
+.sidebar-workflow-item:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 6px rgba(0,0,0,0.08) !important;
+}
+.workflow-card {
+    transition: all 0.3s ease;
+}
+.workflow-card:hover {
+    box-shadow: 0 6px 12px rgba(0,0,0,0.1) !important;
+}
+</style>
 {% endblock %}

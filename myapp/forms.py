@@ -48,14 +48,32 @@ class RegisterForm(forms.ModelForm):
         if commit:
             user.save()
             # Create corresponding user profile with pending status
-            UserProfile.objects.create(
+            profile = UserProfile.objects.create(
                 user=user,
                 role=self.cleaned_data['role'],
                 phone=self.cleaned_data['phone'],
                 group=self.cleaned_data['group'],
                 status='pending'  # Multi-tier registration starts as pending!
             )
+            if self.cleaned_data['group']:
+                from .models import ChatMessage
+                ChatMessage.objects.create(
+                    group=self.cleaned_data['group'],
+                    sender=user,
+                    is_workflow=True,
+                    member_profile=profile,
+                    message=f"New Registration Request: {user.username} has requested to join as {self.get_role_display(profile.role)}."
+                )
         return user
+
+    def get_role_display(self, role):
+        roles = {
+            'admin': 'System Administrator',
+            'president': 'President',
+            'secretary': 'Secretary',
+            'member': 'Kudumbashree Member',
+        }
+        return roles.get(role, role)
 
 # 3. Loan Application Form
 class LoanApplicationForm(forms.ModelForm):
