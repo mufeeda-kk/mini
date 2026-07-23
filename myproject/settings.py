@@ -119,3 +119,6 @@ STATIC_URL = 'static/'
 
 # Session engine configuration for read-only Vercel environment
 SESSION_ENGINE = 'django.contrib.sessions.backends.signed_cookies'
+
+# Login URL redirect configuration
+LOGIN_URL = 'login'
